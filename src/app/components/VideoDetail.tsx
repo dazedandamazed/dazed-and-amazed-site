@@ -66,9 +66,28 @@ export function VideoDetail() {
     alert("Link copied to clipboard!")
   }
 
-  const handleTagClick = (tag: string) => {
+const handleTagClick = (tag: string) => {
     // Navigate to home with tag filter
     navigate(`/?filter=${encodeURIComponent(tag)}`)
+  }
+
+  // Умная ссылка: сообщает домен и убирает nocookie для VEVO
+  const getEmbedUrl = (rawUrl: string) => {
+    if (!rawUrl) return rawUrl
+    try {
+      let cleanUrl = rawUrl.replace("youtube-nocookie.com", "youtube.com")
+      const parsed = new URL(cleanUrl)
+      if (parsed.hostname.includes("youtube.com")) {
+        parsed.searchParams.set("enablejsapi", "1")
+        if (typeof window !== "undefined") {
+          parsed.searchParams.set("origin", window.location.origin)
+          parsed.searchParams.set("widget_referrer", window.location.origin)
+        }
+      }
+      return parsed.toString()
+    } catch {
+      return rawUrl
+    }
   }
 
   return (
@@ -86,7 +105,7 @@ export function VideoDetail() {
       <div className="mb-8">
         <div className="relative aspect-video bg-black rounded-sm overflow-hidden mb-4">
           <iframe
-            src={video.videoUrl}
+            src={getEmbedUrl(video.videoUrl)}
             title={`${video.artist} - ${video.title}`}
             className="w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
