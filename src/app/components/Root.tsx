@@ -20,7 +20,7 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { to: "/", label: "Browse" },
   { to: "/random", label: "Shuffle" },
-  { to: "/thought", label: "Thoughts" },
+  // { to: "/thought", label: "Thoughts" },
   { to: "/submit", label: "Contribute" },
   { to: "/about", label: "About" },
 ]
