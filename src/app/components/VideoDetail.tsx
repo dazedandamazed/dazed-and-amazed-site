@@ -1,20 +1,11 @@
 import { useParams, useNavigate, Link } from "react-router"
-import {
-  Share2,
-  Twitter,
-  Facebook,
-  Link as LinkIcon,
-  ExternalLink,
-  ArrowLeft,
-} from "lucide-react"
-import { useState } from "react"
+import { ExternalLink, ArrowLeft } from "lucide-react"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useVideoArchive } from "../hooks/useVideoArchive"
 
 export function VideoDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [showShareMenu, setShowShareMenu] = useState(false)
   const { language } = useLanguage()
   const { videos, loading, error } = useVideoArchive()
 
@@ -43,30 +34,9 @@ export function VideoDetail() {
     )
   }
 
-  const videoPageUrl = `${window.location.origin}/video/${video.id}`
   const description = video.descriptions?.[language]
 
-  const shareToTwitter = () => {
-    const text = `Check out ${video.title} by ${video.artist}`
-    window.open(
-      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(videoPageUrl)}`,
-      "_blank",
-    )
-  }
-
-  const shareToFacebook = () => {
-    window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoPageUrl)}`,
-      "_blank",
-    )
-  }
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(videoPageUrl)
-    alert("Link copied to clipboard!")
-  }
-
-const handleTagClick = (tag: string) => {
+  const handleTagClick = (tag: string) => {
     // Navigate to home with tag filter
     navigate(`/?filter=${encodeURIComponent(tag)}`)
   }
@@ -131,53 +101,14 @@ const handleTagClick = (tag: string) => {
 
       {/* Video Info */}
       <div className="space-y-6">
-        {/* Title and Share */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="mb-2 font-['JetBrains_Mono'] text-2xl font-extrabold uppercase leading-7 tracking-[-0.36px]">
-              {video.title}
-            </h1>
-            <p className="font-['Kommuna_Demo'] text-[28px] font-normal leading-[33px] text-white">
-              {video.artist}
-            </p>
-          </div>
-
-          {/* Share Button */}
-          <div className="relative">
-            <button
-              onClick={() => setShowShareMenu(!showShareMenu)}
-              className="rounded p-3 transition-colors hover:bg-white hover:text-black"
-              aria-label="Share"
-            >
-              <Share2 className="w-5 h-5" />
-            </button>
-
-            {showShareMenu && (
-              <div className="absolute right-0 z-10 mt-2 min-w-[140px] space-y-1 rounded border border-white bg-black p-2 shadow-lg">
-                <button
-                  onClick={shareToTwitter}
-                  className="flex w-full items-center space-x-2 rounded px-3 py-2 text-sm hover:bg-white hover:text-black"
-                >
-                  <Twitter className="w-4 h-4" />
-                  <span>Twitter</span>
-                </button>
-                <button
-                  onClick={shareToFacebook}
-                  className="flex w-full items-center space-x-2 rounded px-3 py-2 text-sm hover:bg-white hover:text-black"
-                >
-                  <Facebook className="w-4 h-4" />
-                  <span>Facebook</span>
-                </button>
-                <button
-                  onClick={copyLink}
-                  className="flex w-full items-center space-x-2 rounded px-3 py-2 text-sm hover:bg-white hover:text-black"
-                >
-                  <LinkIcon className="w-4 h-4" />
-                  <span>Copy Link</span>
-                </button>
-              </div>
-            )}
-          </div>
+        {/* Title */}
+        <div>
+          <h1 className="mb-2 font-['JetBrains_Mono'] text-2xl font-extrabold uppercase leading-7 tracking-[-0.36px]">
+            {video.title}
+          </h1>
+          <p className="font-['Kommuna_Demo'] text-[28px] font-normal leading-[33px] text-white">
+            {video.artist}
+          </p>
         </div>
 
         {/* Description */}
@@ -195,9 +126,6 @@ const handleTagClick = (tag: string) => {
         {/* Sources and Further Reading */}
         {video.links && video.links.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-wider text-white">
-              Sources & Further Reading
-            </p>
             <div className="flex flex-col items-start gap-2">
               {video.links.map((link) => (
                 <a
@@ -216,10 +144,7 @@ const handleTagClick = (tag: string) => {
         )}
 
         {/* Tags Row 1: Techniques */}
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wider text-white">
-            Techniques / Concepts
-          </p>
+        {video.techniques && video.techniques.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {video.techniques.map((technique) => (
               <button
@@ -231,13 +156,10 @@ const handleTagClick = (tag: string) => {
               </button>
             ))}
           </div>
-        </div>
+        )}
 
         {/* Tags Row 2: Creators */}
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wider text-white">
-            Production Credits
-          </p>
+        {video.creators && (
           <div className="flex flex-wrap gap-2">
             {video.creators.director && (
               <button
@@ -266,13 +188,10 @@ const handleTagClick = (tag: string) => {
               </button>
             )}
           </div>
-        </div>
+        )}
 
         {/* Tags Row 3: Decade */}
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wider text-white">
-            Era
-          </p>
+        {video.decade && (
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleTagClick(video.decade)}
@@ -281,7 +200,7 @@ const handleTagClick = (tag: string) => {
               {video.decade}
             </button>
           </div>
-        </div>
+        )}
 
         {/* Media Section: Stills, GIFs, BTS */}
         {video.media &&
@@ -294,9 +213,6 @@ const handleTagClick = (tag: string) => {
               {/* Stills */}
               {video.media.stills && video.media.stills.length > 0 && (
                 <div className="mb-8">
-                  <h3 className="mb-3 text-sm uppercase tracking-wider text-white">
-                    Video Stills
-                  </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {video.media.stills.map((still) => (
                       <figure key={still.src} className="space-y-2">
@@ -325,9 +241,6 @@ const handleTagClick = (tag: string) => {
               {/* GIFs */}
               {video.media.gifs && video.media.gifs.length > 0 && (
                 <div className="mb-8">
-                  <h3 className="mb-3 text-sm uppercase tracking-wider text-white">
-                    GIFs
-                  </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {video.media.gifs.map((gif, index) => (
                       <img
@@ -344,9 +257,6 @@ const handleTagClick = (tag: string) => {
               {/* BTS */}
               {video.media.bts && video.media.bts.length > 0 && (
                 <div>
-                  <h3 className="mb-3 text-sm uppercase tracking-wider text-white">
-                    Behind the Scenes
-                  </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {video.media.bts.map((btsItem, index) => (
                       <img
