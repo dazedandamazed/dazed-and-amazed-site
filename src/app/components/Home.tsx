@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router";
+import { useSearchParams, Outlet } from "react-router";
 import type { Video } from "../models/video";
 import { useVideoArchive } from "../hooks/useVideoArchive";
 import { VideoCard } from "./VideoCard";
@@ -213,6 +213,9 @@ export function Home() {
           )}
         </div>
       )}
+
+      {/* Портал умного оверлея: проецирует карточку прямо поверх каталога */}
+      <Outlet />
     </div>
   );
 }

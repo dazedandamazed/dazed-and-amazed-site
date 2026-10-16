@@ -12,10 +12,16 @@ export const router = createBrowserRouter([
     path: "/",
     Component: Root,
     children: [
-      { index: true, Component: Home },
-      { path: "random", Component: RandomInspiration },
+      {
+        path: "",
+        Component: Home,
+        children: [
+          // И видео, и случайный клип Shuffle открываются прямо поверх каталога!
+          { path: "video/:id", Component: VideoDetail },
+          { path: "random", Component: RandomInspiration },
+        ],
+      },
       { path: "thought", Component: RandomThought },
-      { path: "video/:id", Component: VideoDetail },
       { path: "submit", Component: Submit },
       { path: "about", Component: About },
     ],
