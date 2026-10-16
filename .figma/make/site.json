@@ -1,0 +1,8 @@
+{
+  "title": "dazed and amazed",
+  "description": "curated archive of the best music videos ever made.",
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -1,0 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&display=swap');
+
+@font-face {
+  font-family: 'Kommuna Demo';
+  src: url('/fonts/Kommuna_Demo-400_Narrow.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
