@@ -3,80 +3,92 @@ import polinaPhoto from "../../imports/polina-photo-large.jpeg"
 export function About() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
-      <header className="mb-14 grid gap-5 lg:mb-20 lg:grid-cols-12">
-        <h1 className="font-['JetBrains_Mono'] text-5xl font-extrabold uppercase leading-none tracking-[-0.04em] sm:text-7xl lg:col-span-7 lg:text-8xl">
-          About
-        </h1>
-        <p className="max-w-md self-end font-['Kommuna_Demo'] text-[32px] leading-[36px] text-[#D9E800] lg:col-span-5">
-          A living archive for people who make images move.
+      {/* Editorial Lead / Manifesto */}
+      <header className="mb-16 border-b border-white/10 pb-12 lg:mb-20 lg:pb-16">
+        <p className="font-['Kommuna_Demo'] text-3xl font-normal leading-[1.15] tracking-tight text-white sm:text-5xl lg:max-w-5xl lg:text-6xl">
+          A living archive of music videos defined by{" "}
+          <span className="text-[#D9E800]">exceptional craft</span>,
+          cinematography, and singular directorial vision.
         </p>
       </header>
 
-      <section className="grid items-start gap-10 lg:grid-cols-12 lg:gap-12">
+      {/* Main Editorial Grid */}
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+        {/* Left Column: Framed Portrait */}
         <div className="lg:col-span-5">
-          <img
-            src={polinaPhoto}
-            alt="Polina Varfolomeeva"
-            className="aspect-[2/3] w-full object-cover"
-          />
+          <div className="group relative overflow-hidden bg-zinc-950">
+            <img
+              src={polinaPhoto}
+              alt="Polina Varfolomeeva"
+              className="aspect-[3/4] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+            />
+          </div>
+          <p className="mt-3 font-['JetBrains_Mono'] text-[11px] uppercase tracking-widest text-zinc-500">
+            [ Curator — Polina Varfolomeeva ]
+          </p>
         </div>
 
-        <div className="lg:col-span-6 lg:col-start-7">
-          <p className="mb-2 text-sm uppercase tracking-wider text-[#D9E800]">
-            Curated by
-          </p>
-          <h2 className="mb-8 font-['JetBrains_Mono'] text-3xl font-extrabold uppercase leading-tight sm:text-4xl">
-            Polina Varfolomeeva
-          </h2>
+        {/* Right Column: Bio, Pull-Quote, Mission */}
+        <div className="space-y-12 lg:col-span-7 lg:pl-4">
+          {/* Section 01: Curator */}
+          <div>
+            <span className="font-['JetBrains_Mono'] text-xs font-semibold uppercase tracking-widest text-[#D9E800]">
+              01 / The Curator
+            </span>
+            <h2 className="mt-2 mb-6 font-['JetBrains_Mono'] text-2xl font-extrabold uppercase tracking-tight text-white sm:text-3xl">
+              Polina Varfolomeeva
+            </h2>
 
-          <div className="space-y-6 text-base leading-7 text-white">
-            <p>
-              Polina Varfolomeeva is a film director and educator dedicated to
-              the intersection of visual storytelling and music. With a decade
-              of experience in commercial and music video direction, she has
-              worked with indie artists and major brands across multiple
-              genres. Her social media projects are exploring what music videos
-              can achieve as an art form.
-            </p>
+            <div className="space-y-4 text-base leading-relaxed text-zinc-300">
+              <p>
+                Polina Varfolomeeva is a film director and educator dedicated to
+                the intersection of visual storytelling and music. With a decade
+                of experience in commercial and music video direction, she has
+                worked with indie artists and major brands across multiple
+                genres.
+              </p>
+              <p>
+                As an educator, Polina teaches visual narrative and directing at
+                leading film schools, sharing her passion for innovative
+                cinematography, precise in-camera effects, and a delicate approach to
+                the creative process.
+              </p>
+            </div>
+          </div>
 
-            <p>
-              As an educator, Polina teaches visual narrative and directing at
-              leading film schools, sharing her passion for innovative
-              cinematography and creative technique. Her work emphasizes the
-              importance of craft, collaboration, and a delicate approach to
-              the creative process.
-            </p>
+          {/* Pull-Quote */}
+          <blockquote className="border-l-2 border-[#D9E800] pl-6 font-['Kommuna_Demo'] text-2xl leading-snug text-white sm:text-3xl">
+            “Music videos are a unique canvas where directors can experiment,
+            take risks, and tell stories in ways that cinema often doesn't allow.
+            This collection celebrates that spirit.”
+          </blockquote>
 
-            <p>
-              This platform serves as a curated collection of music videos that
-              exemplify top-tier direction, cinematography, and conceptual
-              excellence. Each video is selected for its artistic merit,
-              technical innovation, and cultural impact—offering inspiration
-              for filmmakers, creatives, and music video enthusiasts worldwide.
-            </p>
+          {/* Section 02: Platform & Mission */}
+          <div>
+            <span className="font-['JetBrains_Mono'] text-xs font-semibold uppercase tracking-widest text-[#D9E800]">
+              02 / The Mission
+            </span>
+            <h2 className="mt-2 mb-6 font-['JetBrains_Mono'] text-2xl font-extrabold uppercase tracking-tight text-white sm:text-3xl">
+              The Platform
+            </h2>
+
+            <div className="space-y-4 text-base leading-relaxed text-zinc-300">
+              <p>
+                This site is a resource for directors, cinematographers, and
+                visual artists seeking inspiration from works known for
+                top-tier execution. We focus on pieces that demonstrate
+                inventive techniques, compelling narratives, and memorable
+                artistic vision.
+              </p>
+              <p>
+                Each work is curated for its cultural resonance, technical merit,
+                and directorial voice—serving as an educational and creative
+                wellspring for filmmakers worldwide.
+              </p>
+            </div>
           </div>
         </div>
-      </section>
-
-      <blockquote className="my-16 max-w-5xl font-['Kommuna_Demo'] text-[36px] leading-[40px] text-[#D9E800] sm:text-[48px] sm:leading-[52px] lg:my-24">
-        “Music videos are a unique canvas where directors can experiment, take
-        risks, and tell stories in ways that cinema often doesn't allow. This
-        collection celebrates that spirit.”
-      </blockquote>
-
-      <section className="grid gap-6 lg:grid-cols-12 lg:gap-12">
-        <h2 className="font-['JetBrains_Mono'] text-2xl font-extrabold uppercase leading-7 lg:col-span-4">
-          Our mission
-        </h2>
-        <p className="max-w-3xl text-lg leading-8 text-white lg:col-span-7 lg:col-start-6">
-          This site is a resource for creatives seeking inspiration from music
-          videos known for exceptional craft and direction. We focus on works
-          that demonstrate innovative techniques, compelling visual
-          storytelling, and memorable artistic vision. Whether you're a
-          filmmaker, cinematographer, or simply a lover of visual art, this
-          collection aims to showcase the very best of music video direction.
-        </p>
-      </section>
+      </div>
     </div>
   )
 }
