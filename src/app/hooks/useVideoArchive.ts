@@ -197,18 +197,16 @@ export function VideoArchiveProvider({ children }: { children: ReactNode }) {
 
     async function loadVideos() {
       try {
-        const endpoint = import.meta.env.DEV
-          ? "/api/videos"
-          : `https://${projectId}.supabase.co/functions/v1/make-server-095928e9/videos`
-        const response = await fetch(
-          endpoint,
-          {
-            headers: import.meta.env.DEV
-              ? undefined
-              : { Authorization: `Bearer ${publicAnonKey}` },
-            signal: controller.signal,
+     const tableName = "sample10"
+        const endpoint = `https://${projectId}.supabase.co/rest/v1/${tableName}?select=*`
+        
+        const response = await fetch(endpoint, {
+          headers: {
+            apikey: publicAnonKey,
+            Authorization: `Bearer ${publicAnonKey}`,
           },
-        )
+          signal: controller.signal,
+        })
 
         if (!response.ok) throw new Error("Could not load the video archive")
 
