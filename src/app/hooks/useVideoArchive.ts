@@ -197,7 +197,7 @@ export function VideoArchiveProvider({ children }: { children: ReactNode }) {
 
     async function loadVideos() {
       try {
-     const tableName = "sample10"
+     const tableName = "sample 10"
         const endpoint = `https://${projectId}.supabase.co/rest/v1/${tableName}?select=*`
         
         const response = await fetch(endpoint, {
