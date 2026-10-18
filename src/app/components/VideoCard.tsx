@@ -30,7 +30,7 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
           <iframe
             src={embedUrl}
             title={`${video.artist} - ${video.title}`}
-            className="w-full h-full"
+            className="w-full h-full border-0 outline-none block"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
@@ -64,9 +64,13 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
               {video.title}
             </h3>
           </Link>
-          <p className="font-['Kommuna_Demo'] text-[28px] font-normal leading-[33px] text-white">
+          <button
+            onClick={() => onTagClick(video.artist, "creator")}
+            className="block text-left font-['Kommuna_Demo'] text-[28px] font-normal leading-[33px] text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] cursor-pointer"
+            title={`Filter by ${video.artist}`}
+          >
             {video.artist}
-          </p>
+          </button>
         </div>
 
         {/* Techniques */}
@@ -77,7 +81,7 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
                 <button
                   key={technique}
                   onClick={() => onTagClick(technique, "technique")}
-                  className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                  className="rounded-md bg-black border border-white/20 px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
                 >
                   {technique}
                 </button>
@@ -93,7 +97,7 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
               {video.creators.director && (
                 <button
                   onClick={() => onTagClick(video.creators.director!, "creator")}
-                  className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                  className="rounded-md bg-black border border-white/20 px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
                 >
                   Dir: {video.creators.director}
                 </button>
@@ -103,7 +107,7 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
                   onClick={() =>
                     onTagClick(video.creators.productionCompany!, "creator")
                   }
-                  className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                  className="rounded-md bg-black border border-white/20 px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
                 >
                   Prod: {video.creators.productionCompany}
                 </button>
@@ -111,7 +115,7 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
               {video.creators.dop && (
                 <button
                   onClick={() => onTagClick(video.creators.dop!, "creator")}
-                  className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                  className="rounded-md bg-black border border-white/20 px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
                 >
                   DOP: {video.creators.dop}
                 </button>
@@ -126,7 +130,7 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => onTagClick(video.decade, "decade")}
-                className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                className="rounded-md bg-black border border-white/20 px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
               >
                 {video.decade}
               </button>
