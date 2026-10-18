@@ -3,6 +3,7 @@ import { ExternalLink, ArrowLeft, X, ChevronLeft, ChevronRight } from "lucide-re
 import { useEffect, useMemo } from "react"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useVideoArchive } from "../hooks/useVideoArchive"
+import { LanguageToggle } from "./LanguageToggle"
 
 export function VideoDetail() {
   const { id } = useParams()
@@ -16,7 +17,7 @@ export function VideoDetail() {
 
   const video = videos[currentIndex]
 
-  // Находим предыдущий и следующий клип (по кругу)
+  // Предыдущий и следующий клип (по кругу)
   const prevVideo = useMemo(() => {
     if (videos.length <= 1 || currentIndex === -1) return null
     return currentIndex > 0 ? videos[currentIndex - 1] : videos[videos.length - 1]
@@ -95,7 +96,7 @@ export function VideoDetail() {
     navigate(`/?filter=${encodeURIComponent(tag)}`)
   }
 
-  // Умная ссылка: сообщает домен и убирает nocookie для VEVO
+  // Умная ссылка против VEVO
   const getEmbedUrl = (rawUrl: string) => {
     if (!rawUrl) return rawUrl
     try {
@@ -114,12 +115,21 @@ export function VideoDetail() {
     }
   }
 
+  // Самоироничный копирайт для YouTube vs Vimeo
+  const isVimeo =
+    video.platform?.toLowerCase() === "vimeo" ||
+    video.videoUrl?.includes("vimeo.com")
+
+  const fallbackText = isVimeo
+    ? "The creator restricted playback here. Guess we have to watch it on Vimeo"
+    : "The label blocked playback here. Guess we have to watch it on YouTube"
+
   return (
     <div
       onClick={handleClose}
       className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-md transition-opacity duration-200"
     >
-      {/* Боковая стрелка влево (Предыдущий клип) */}
+      {/* Стрелка влево */}
       {prevVideo && (
         <button
           onClick={(e) => {
@@ -134,7 +144,7 @@ export function VideoDetail() {
         </button>
       )}
 
-      {/* Боковая стрелка вправо (Следующий клип) */}
+      {/* Стрелка вправо */}
       {nextVideo && (
         <button
           onClick={(e) => {
@@ -149,13 +159,13 @@ export function VideoDetail() {
         </button>
       )}
 
-      {/* Основной контент карточки */}
+      {/* Контейнер карточки */}
       <div
         onClick={(e) => e.stopPropagation()}
         className="min-h-screen px-4 py-8 sm:px-12 lg:px-16"
       >
         <div className="mx-auto max-w-5xl">
-          {/* Header Bar inside Overlay */}
+          {/* Header Bar: Back слева, родной LanguageToggle и Крестик справа */}
           <div className="mb-6 flex items-center justify-between">
             <button
               onClick={handleClose}
@@ -167,14 +177,20 @@ export function VideoDetail() {
               </span>
             </button>
 
-            <button
-              onClick={handleClose}
-              className="rounded p-2 text-white transition-colors hover:bg-white/10 hover:text-[#D9E800]"
-              aria-label="Close"
-              title="Close (Esc)"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            <div className="flex items-center space-x-6">
+              {/* Родной переключатель языка точно в твоем дизайне */}
+              <LanguageToggle />
+
+              {/* Крестик закрытия */}
+              <button
+                onClick={handleClose}
+                className="rounded p-2 text-white transition-colors hover:bg-white/10 hover:text-[#D9E800]"
+                aria-label="Close"
+                title="Close (Esc)"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
           </div>
 
           {/* Video Player */}
@@ -189,17 +205,17 @@ export function VideoDetail() {
                 allowFullScreen
               />
             </div>
-            {/* Fallback link */}
+            {/* Твой самоироничный копирайт для источника */}
             {video.videoDirectUrl && (
-              <div className="text-center">
+              <div className="text-center pt-1">
                 <a
                   href={video.videoDirectUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-2 text-sm text-white transition-colors hover:text-[#D9E800]"
+                  className="inline-flex items-center space-x-1 text-sm text-white/80 transition-colors hover:text-[#D9E800]"
                 >
-                  <span>Can't see the video? Watch source video</span>
-                  <ExternalLink className="w-3 h-3" />
+                  <span>{fallbackText}</span>
+                  <ExternalLink className="w-3.5 h-3.5 ml-1 inline" />
                 </a>
               </div>
             )}
@@ -308,7 +324,7 @@ export function VideoDetail() {
               </div>
             )}
 
-            {/* Media Section: Stills, GIFs, BTS */}
+            {/* Media Section */}
             {video.media &&
               (video.media.stills || video.media.gifs || video.media.bts) && (
                 <div className="border-t border-white/20 pt-8">

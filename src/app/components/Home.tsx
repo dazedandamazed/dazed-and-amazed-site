@@ -23,7 +23,22 @@ export function Home() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [baseList, setBaseList] = useState<Video[]>([]);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [placeholder, setPlaceholder] = useState("Search archive");
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Адаптивный плейсхолдер: на смартфонах "Search archive", на десктопе полный
+  useEffect(() => {
+    const updatePlaceholder = () => {
+      if (window.innerWidth >= 640) {
+        setPlaceholder("Search by title, artist, technique, director...");
+      } else {
+        setPlaceholder("Search archive");
+      }
+    };
+    updatePlaceholder();
+    window.addEventListener("resize", updatePlaceholder);
+    return () => window.removeEventListener("resize", updatePlaceholder);
+  }, []);
 
   // Shuffle after the Supabase archive loads.
   useEffect(() => {
@@ -118,18 +133,18 @@ export function Home() {
       {/* Search Bar */}
       <div className="mx-auto mb-8 flex h-[50px] w-full max-w-[672px] items-center">
         <div className="relative h-[26px] w-full">
-          <Search className="pointer-events-none absolute left-[31px] top-1/2 size-[12.75px] -translate-y-1/2 text-white" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-[12.75px] -translate-y-1/2 text-white sm:left-[31px]" />
           <input
             type="text"
-            placeholder="Search by title, artist, technique, director..."
+            placeholder={placeholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-[26px] w-full rounded-[7px] border border-[#D9E800] bg-black pl-[53.75px] pr-[53.75px] font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-base leading-[24px] text-white placeholder:text-white focus:outline-none"
+            className="h-[26px] w-full rounded-[7px] border border-[#D9E800] bg-black pl-9 pr-9 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-base leading-[24px] text-white placeholder:text-white focus:outline-none sm:pl-[53.75px] sm:pr-[53.75px]"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-[31px] top-1/2 -translate-y-1/2 text-white transition-colors hover:text-[#D9E800]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white transition-colors hover:text-[#D9E800] sm:right-[31px]"
               aria-label="Clear search"
             >
               <X className="size-[12.75px]" />
@@ -214,7 +229,7 @@ export function Home() {
         </div>
       )}
 
-      {/* Портал умного оверлея: проецирует карточку прямо поверх каталога */}
+      {/* Портал умного оверлея */}
       <Outlet />
     </div>
   );
