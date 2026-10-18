@@ -64,4 +64,76 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
               {video.title}
             </h3>
           </Link>
-          <p className="font-['Kommuna_Demo'] text-[28px] font-normal lead
+          <p className="font-['Kommuna_Demo'] text-[28px] font-normal leading-[33px] text-white">
+            {video.artist}
+          </p>
+        </div>
+
+        {/* Techniques */}
+        {video.techniques && video.techniques.length > 0 && (
+          <div className="space-y-1">
+            <div className="flex flex-wrap gap-2">
+              {video.techniques.map((technique) => (
+                <button
+                  key={technique}
+                  onClick={() => onTagClick(technique, "technique")}
+                  className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                >
+                  {technique}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Creators */}
+        {video.creators && (
+          <div className="space-y-1">
+            <div className="flex flex-wrap gap-2">
+              {video.creators.director && (
+                <button
+                  onClick={() => onTagClick(video.creators.director!, "creator")}
+                  className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                >
+                  Dir: {video.creators.director}
+                </button>
+              )}
+              {video.creators.productionCompany && (
+                <button
+                  onClick={() =>
+                    onTagClick(video.creators.productionCompany!, "creator")
+                  }
+                  className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                >
+                  Prod: {video.creators.productionCompany}
+                </button>
+              )}
+              {video.creators.dop && (
+                <button
+                  onClick={() => onTagClick(video.creators.dop!, "creator")}
+                  className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                >
+                  DOP: {video.creators.dop}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Decade */}
+        {video.decade && (
+          <div className="space-y-1">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => onTagClick(video.decade, "decade")}
+                className="rounded-md bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+              >
+                {video.decade}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
