@@ -26,7 +26,7 @@ export function Home() {
   const [placeholder, setPlaceholder] = useState("Search archive");
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Адаптивный плейсхолдер: на смартфонах "Search archive", на десктопе полный
+  // Responsive search placeholder: mobile vs desktop
   useEffect(() => {
     const updatePlaceholder = () => {
       if (window.innerWidth >= 640) {
@@ -40,12 +40,12 @@ export function Home() {
     return () => window.removeEventListener("resize", updatePlaceholder);
   }, []);
 
-  // Shuffle after the Supabase archive loads.
+  // Shuffle after the Supabase archive loads
   useEffect(() => {
     setBaseList(shuffle(videos));
   }, [videos]);
 
- // Sync ?filter= param from URL with activeTags state
+  // Sync ?filter= URL query param with activeTags state
   useEffect(() => {
     const filter = searchParams.get("filter");
     if (filter) {
@@ -60,21 +60,34 @@ export function Home() {
     setVisibleCount(ITEMS_PER_PAGE);
   }, [searchQuery, activeTags, baseList]);
 
+  // Universal Full-Text Search across titles, artists, credits, tags, and bilingual descriptions
   const filteredVideos = useMemo(() => {
     let result = baseList;
 
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (video) =>
-          video.title.toLowerCase().includes(query) ||
-          video.artist.toLowerCase().includes(query) ||
-          video.techniques.some((t) => t.toLowerCase().includes(query)) ||
-          video.creators.director?.toLowerCase().includes(query) ||
-          video.creators.productionCompany?.toLowerCase().includes(query) ||
-          video.creators.dop?.toLowerCase().includes(query) ||
-          video.decade.toLowerCase().includes(query)
-      );
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((video) => {
+        const descEn = video.descriptions?.en?.toLowerCase() || "";
+        const descRu = video.descriptions?.ru?.toLowerCase() || "";
+        const title = video.title.toLowerCase();
+        const artist = video.artist.toLowerCase();
+        const director = video.creators.director?.toLowerCase() || "";
+        const production = video.creators.productionCompany?.toLowerCase() || "";
+        const dop = video.creators.dop?.toLowerCase() || "";
+        const decade = video.decade.toLowerCase();
+
+        return (
+          title.includes(query) ||
+          artist.includes(query) ||
+          descEn.includes(query) ||
+          descRu.includes(query) ||
+          director.includes(query) ||
+          production.includes(query) ||
+          dop.includes(query) ||
+          decade.includes(query) ||
+          video.techniques.some((t) => t.toLowerCase().includes(query))
+        );
+      });
     }
 
     if (activeTags.length > 0) {
@@ -82,6 +95,7 @@ export function Home() {
         activeTags.every((tag) => {
           const tagLower = tag.toLowerCase();
           return (
+            video.artist.toLowerCase() === tagLower ||
             video.techniques.some((t) => t.toLowerCase() === tagLower) ||
             video.creators.director?.toLowerCase() === tagLower ||
             video.creators.productionCompany?.toLowerCase() === tagLower ||
@@ -95,7 +109,7 @@ export function Home() {
     return result;
   }, [baseList, searchQuery, activeTags]);
 
-  // IntersectionObserver — load more when sentinel enters viewport
+  // Infinite Scroll IntersectionObserver
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
@@ -114,7 +128,7 @@ export function Home() {
   const visibleVideos = filteredVideos.slice(0, visibleCount);
   const hasMore = visibleCount < filteredVideos.length;
 
-  const handleTagClick = (tag: string, _type: "technique" | "creator" | "decade") => {
+  const handleTagClick = (tag: string, _type?: "technique" | "creator" | "decade") => {
     const next = activeTags.includes(tag)
       ? activeTags.filter((t) => t !== tag)
       : [...activeTags, tag];
@@ -164,7 +178,7 @@ export function Home() {
           {activeTags.map((tag) => (
             <button
               key={tag}
-              onClick={() => handleTagClick(tag, "technique")}
+              onClick={() => handleTagClick(tag)}
               className="flex items-center space-x-2 rounded-sm bg-white px-3 py-1 text-sm text-black transition-colors hover:bg-[#D9E800]"
             >
               <span>{tag}</span>
@@ -172,7 +186,7 @@ export function Home() {
             </button>
           ))}
           {searchQuery && (
-            <span className="rounded-sm border border-white bg-black px-3 py-1 text-sm">
+            <span className="rounded-sm border border-white bg-black px-3 py-1 text-sm text-white">
               Search: &quot;{searchQuery}&quot;
             </span>
           )}
@@ -233,7 +247,7 @@ export function Home() {
         </div>
       )}
 
-      {/* Портал умного оверлея */}
+      {/* Portal for Cinema Overlay */}
       <Outlet />
     </div>
   );
