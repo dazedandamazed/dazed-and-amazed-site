@@ -123,6 +123,31 @@ function fallbackId(row: Record<string, any>, url: string): string {
 }
 
 function normalizeVideo(rawRow: Record<string, any>): Video | null {
+  // Helper: strips PostgreSQL array braces {} and quotes, cleanly joins director duos/trios
+  function cleanText(val: unknown): string | undefined {
+    if (!val) return undefined
+    if (Array.isArray(val)) {
+      const list = val.map(String).map((s) => s.trim()).filter(Boolean)
+      return list.length > 0 ? list.join(", ") : undefined
+    }
+    if (typeof val === "string") {
+      const trimmed = val.trim()
+      if (!trimmed) return undefined
+      // Handle PostgreSQL stringified array syntax: {"Name 1", "Name 2"}
+      if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        const inner = trimmed.slice(1, -1).trim()
+        if (!inner) return undefined
+        return inner
+          .split(",")
+          .map((s) => s.replace(/^"|"$/g, "").trim())
+          .filter(Boolean)
+          .join(", ")
+      }
+      return trimmed.replace(/^"|"$/g, "").trim()
+    }
+    return String(val).trim()
+  }
+
   const row = asObject(rawRow.value ?? rawRow.data ?? rawRow)
   const creators = asObject(row.creators)
   const descriptions = asObject(row.descriptions)
@@ -160,14 +185,14 @@ function normalizeVideo(rawRow: Record<string, any>): Video | null {
       tag.replaceAll("_", " "),
     ),
     creators: {
-      director: creators.director ?? row.director ?? undefined,
-      productionCompany:
+      director: cleanText(creators.director ?? row.director),
+      productionCompany: cleanText(
         creators.productionCompany ??
-        creators.production_company ??
-        row.productionCompany ??
-        row.production_company ??
-        undefined,
-      dop: creators.dop ?? row.dop ?? undefined,
+          creators.production_company ??
+          row.productionCompany ??
+          row.production_company,
+      ),
+      dop: cleanText(creators.dop ?? row.dop),
     },
     decade: asArray(row.decade ?? row.era)[0] ?? "",
     descriptions:
@@ -197,7 +222,7 @@ export function VideoArchiveProvider({ children }: { children: ReactNode }) {
 
     async function loadVideos() {
       try {
-     const tableName = "sample10"
+        const tableName = "sample10"
         const endpoint = `https://${projectId}.supabase.co/rest/v1/${tableName}?select=*`
         
         const response = await fetch(endpoint, {
