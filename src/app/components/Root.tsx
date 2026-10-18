@@ -116,7 +116,7 @@ export function Root() {
         <div className="mx-auto flex max-w-7xl flex-col items-center px-4 py-8 sm:px-6 lg:px-8">
           <div className="mb-4 flex h-[34px] items-center gap-6">
             <a
-              href="https://instagram.com/varpholomeeva"
+              href="https://instagram.com/dazed_amazed"
               target="_blank"
               rel="noopener noreferrer"
               className="text-white transition-colors hover:text-[#D9E800]"
