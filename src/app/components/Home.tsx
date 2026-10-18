@@ -45,11 +45,15 @@ export function Home() {
     setBaseList(shuffle(videos));
   }, [videos]);
 
-  // Seed active tags from ?filter= URL param on mount
+ // Sync ?filter= param from URL with activeTags state
   useEffect(() => {
     const filter = searchParams.get("filter");
-    if (filter) setActiveTags([filter]);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (filter) {
+      setActiveTags([filter]);
+    } else {
+      setActiveTags([]);
+    }
+  }, [searchParams]);
 
   // Reset visible count when filters or base list change
   useEffect(() => {
