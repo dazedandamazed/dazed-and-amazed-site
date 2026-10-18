@@ -1,15 +1,76 @@
 import { useParams, useNavigate, Link } from "react-router"
 import { ExternalLink, ArrowLeft, X, ChevronLeft, ChevronRight } from "lucide-react"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useVideoArchive } from "../hooks/useVideoArchive"
 import { LanguageToggle } from "./LanguageToggle"
+
+// Helper: renders text with markdown-style links [text](url) in brand green
+function FormattedDescription({ text }: { text: string }) {
+  const parts = useMemo(() => {
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+    const elements: (string | { text: string; url: string; key: number })[] = []
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+    let key = 0
+
+    while ((match = linkRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        elements.push(text.slice(lastIndex, match.index))
+      }
+      elements.push({ text: match[1], url: match[2], key: key++ })
+      lastIndex = linkRegex.lastIndex
+    }
+
+    if (lastIndex < text.length) {
+      elements.push(text.slice(lastIndex))
+    }
+
+    return elements
+  }, [text])
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (typeof part === "string") {
+          return part
+        }
+
+        const isInternal = part.url.startsWith("/") || part.url.startsWith("?")
+        if (isInternal) {
+          return (
+            <Link
+              key={part.key}
+              to={part.url}
+              className="text-[#D9E800] underline underline-offset-4 transition-opacity hover:opacity-80 active:opacity-70"
+            >
+              {part.text}
+            </Link>
+          )
+        }
+
+        return (
+          <a
+            key={part.key}
+            href={part.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#D9E800] underline underline-offset-4 transition-opacity hover:opacity-80 active:opacity-70"
+          >
+            {part.text}
+          </a>
+        )
+      })}
+    </>
+  )
+}
 
 export function VideoDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { language } = useLanguage()
   const { videos, loading, error } = useVideoArchive()
+  const [playbackError, setPlaybackError] = useState(false)
 
   const currentIndex = useMemo(() => {
     return videos.findIndex((v) => v.id === id)
@@ -17,7 +78,32 @@ export function VideoDetail() {
 
   const video = videos[currentIndex]
 
-  // Предыдущий и следующий клип (по кругу)
+  // Reset playback error state when video changes
+  useEffect(() => {
+    setPlaybackError(false)
+  }, [id])
+
+  // Listen for YouTube/Vimeo error postMessages from iframe
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      try {
+        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data
+        if (
+          data?.event === "onError" ||
+          data?.info === 101 ||
+          data?.info === 150 ||
+          data?.info === 100
+        ) {
+          setPlaybackError(true)
+        }
+      } catch {
+        // Non-JSON message from external scripts
+      }
+    }
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [id])
+
   const prevVideo = useMemo(() => {
     if (videos.length <= 1 || currentIndex === -1) return null
     return currentIndex > 0 ? videos[currentIndex - 1] : videos[videos.length - 1]
@@ -40,7 +126,6 @@ export function VideoDetail() {
     if (nextVideo) navigate(`/video/${nextVideo.id}`, { replace: true })
   }
 
-  // 1. Блокируем скролл каталога позади оверлея
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow
     document.body.style.overflow = "hidden"
@@ -49,7 +134,6 @@ export function VideoDetail() {
     }
   }, [])
 
-  // 2. Управление клавиатурой: Esc (закрыть), ← (назад), → (вперед)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose()
@@ -67,7 +151,7 @@ export function VideoDetail() {
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
-        <p className="text-white font-['JetBrains_Mono']">Loading video...</p>
+        <p className="font-['JetBrains_Mono'] text-white">Loading video...</p>
       </div>
     )
   }
@@ -76,7 +160,7 @@ export function VideoDetail() {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
         <div className="text-center">
-          <h2 className="text-2xl font-['JetBrains_Mono'] mb-4 text-white">
+          <h2 className="mb-4 font-['JetBrains_Mono'] text-2xl text-white">
             {error ? "Could not load video" : "Video not found"}
           </h2>
           <button
@@ -96,7 +180,6 @@ export function VideoDetail() {
     navigate(`/?filter=${encodeURIComponent(tag)}`)
   }
 
-  // Умная ссылка против VEVO
   const getEmbedUrl = (rawUrl: string) => {
     if (!rawUrl) return rawUrl
     try {
@@ -115,7 +198,6 @@ export function VideoDetail() {
     }
   }
 
-  // Самоироничный копирайт для YouTube vs Vimeo
   const isVimeo =
     video.platform?.toLowerCase() === "vimeo" ||
     video.videoUrl?.includes("vimeo.com")
@@ -129,14 +211,14 @@ export function VideoDetail() {
       onClick={handleClose}
       className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-md transition-opacity duration-200"
     >
-      {/* Стрелка влево */}
+      {/* Previous video arrow */}
       {prevVideo && (
         <button
           onClick={(e) => {
             e.stopPropagation()
             goToPrev()
           }}
-          className="fixed left-2 top-1/2 -translate-y-1/2 z-50 rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-[#D9E800] sm:left-6 sm:p-3"
+          className="fixed left-2 top-1/2 -translate-y-1/2 z-50 rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-[#D9E800] active:text-[#D9E800] sm:left-6 sm:p-3"
           aria-label="Previous video"
           title="Previous (←)"
         >
@@ -144,14 +226,14 @@ export function VideoDetail() {
         </button>
       )}
 
-      {/* Стрелка вправо */}
+      {/* Next video arrow */}
       {nextVideo && (
         <button
           onClick={(e) => {
             e.stopPropagation()
             goToNext()
           }}
-          className="fixed right-2 top-1/2 -translate-y-1/2 z-50 rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-[#D9E800] sm:right-6 sm:p-3"
+          className="fixed right-2 top-1/2 -translate-y-1/2 z-50 rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-[#D9E800] active:text-[#D9E800] sm:right-6 sm:p-3"
           aria-label="Next video"
           title="Next (→)"
         >
@@ -159,17 +241,17 @@ export function VideoDetail() {
         </button>
       )}
 
-      {/* Контейнер карточки */}
+      {/* Modal Card Content */}
       <div
         onClick={(e) => e.stopPropagation()}
         className="min-h-screen px-4 py-8 sm:px-12 lg:px-16"
       >
         <div className="mx-auto max-w-5xl">
-          {/* Header Bar: Back слева, родной LanguageToggle и Крестик справа */}
+          {/* Header Bar */}
           <div className="mb-6 flex items-center justify-between">
             <button
               onClick={handleClose}
-              className="flex items-center space-x-2 text-white transition-colors hover:text-[#D9E800]"
+              className="flex items-center space-x-2 text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800]"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="font-['JetBrains_Mono'] text-sm uppercase tracking-wider">
@@ -178,13 +260,11 @@ export function VideoDetail() {
             </button>
 
             <div className="flex items-center space-x-6">
-              {/* Родной переключатель языка */}
               <LanguageToggle />
 
-              {/* Крестик закрытия */}
               <button
                 onClick={handleClose}
-                className="rounded p-2 text-white transition-colors hover:bg-white/10 hover:text-[#D9E800]"
+                className="rounded p-2 text-white transition-colors hover:bg-white/10 hover:text-[#D9E800] active:text-[#D9E800]"
                 aria-label="Close"
                 title="Close (Esc)"
               >
@@ -193,26 +273,27 @@ export function VideoDetail() {
             </div>
           </div>
 
-          {/* Video Player */}
+          {/* Video Player (Clean black box, no white border artifact) */}
           <div className="mb-8">
-            <div className="relative aspect-video bg-black rounded-sm overflow-hidden mb-4 border border-white/10">
+            <div className="relative aspect-video bg-black rounded-sm overflow-hidden mb-4">
               <iframe
                 src={getEmbedUrl(video.videoUrl)}
                 title={`${video.artist} - ${video.title}`}
-                className="w-full h-full"
+                className="w-full h-full border-0 outline-none block"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
               />
             </div>
-            {/* Твой самоироничный копирайт для источника */}
-            {video.videoDirectUrl && (
-              <div className="text-center pt-1">
+
+            {/* Fallback notice: rendered ONLY when playback error is detected */}
+            {(playbackError || !video.videoUrl) && video.videoDirectUrl && (
+              <div className="text-center pt-1 animate-in fade-in duration-300">
                 <a
                   href={video.videoDirectUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center space-x-1 text-sm text-white/80 transition-colors hover:text-[#D9E800]"
+                  className="inline-flex items-center space-x-1 text-sm text-[#D9E800] transition-opacity hover:opacity-80 active:opacity-70"
                 >
                   <span>{fallbackText}</span>
                   <ExternalLink className="w-3.5 h-3.5 ml-1 inline" />
@@ -223,24 +304,28 @@ export function VideoDetail() {
 
           {/* Video Info */}
           <div className="space-y-6">
-            {/* Title */}
+            {/* Title & Clickable Artist */}
             <div>
               <h1 className="mb-2 font-['JetBrains_Mono'] text-2xl font-extrabold uppercase leading-7 tracking-[-0.36px] text-white sm:text-3xl">
                 {video.title}
               </h1>
-              <p className="font-['Kommuna_Demo'] text-[28px] font-normal leading-[33px] text-white">
+              <button
+                onClick={() => handleTagClick(video.artist)}
+                className="block text-left font-['Kommuna_Demo'] text-[28px] font-normal leading-[33px] text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] cursor-pointer"
+                title={`Filter by ${video.artist}`}
+              >
                 {video.artist}
-              </p>
+              </button>
             </div>
 
-            {/* Description */}
+            {/* Description with Markdown link support */}
             {description && (
               <div className="max-w-3xl">
                 <p
                   lang={language}
                   className="whitespace-pre-line leading-relaxed text-white text-base sm:text-lg"
                 >
-                  {description}
+                  <FormattedDescription text={description} />
                 </p>
               </div>
             )}
@@ -255,7 +340,7 @@ export function VideoDetail() {
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-white transition-colors hover:text-[#D9E800]"
+                      className="inline-flex items-center gap-2 text-sm text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800]"
                     >
                       <span>{link.label}</span>
                       <ExternalLink className="w-3 h-3" />
@@ -272,7 +357,7 @@ export function VideoDetail() {
                   <button
                     key={technique}
                     onClick={() => handleTagClick(technique)}
-                    className="rounded-sm bg-white/10 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                    className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
                   >
                     {technique}
                   </button>
@@ -286,7 +371,7 @@ export function VideoDetail() {
                 {video.creators.director && (
                   <button
                     onClick={() => handleTagClick(video.creators.director!)}
-                    className="rounded-sm bg-white/10 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                    className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
                   >
                     Dir: {video.creators.director}
                   </button>
@@ -296,7 +381,7 @@ export function VideoDetail() {
                     onClick={() =>
                       handleTagClick(video.creators.productionCompany!)
                     }
-                    className="rounded-sm bg-white/10 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                    className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
                   >
                     Prod: {video.creators.productionCompany}
                   </button>
@@ -304,7 +389,7 @@ export function VideoDetail() {
                 {video.creators.dop && (
                   <button
                     onClick={() => handleTagClick(video.creators.dop!)}
-                    className="rounded-sm bg-white/10 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                    className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
                   >
                     DOP: {video.creators.dop}
                   </button>
@@ -317,7 +402,7 @@ export function VideoDetail() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => handleTagClick(video.decade)}
-                  className="rounded-sm bg-white/10 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black"
+                  className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
                 >
                   {video.decade}
                 </button>
@@ -328,7 +413,7 @@ export function VideoDetail() {
             {video.media &&
               (video.media.stills || video.media.gifs || video.media.bts) && (
                 <div className="border-t border-white/20 pt-8">
-                  <h2 className="text-2xl font-['JetBrains_Mono'] mb-6 text-white">
+                  <h2 className="mb-6 font-['JetBrains_Mono'] text-2xl text-white">
                     Media & Behind the Scenes
                   </h2>
 
@@ -348,7 +433,7 @@ export function VideoDetail() {
                                 href={still.sourceUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-white transition-colors hover:text-[#D9E800]"
+                                className="inline-flex items-center gap-1 text-xs text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800]"
                               >
                                 <span>Original post</span>
                                 <ExternalLink className="w-3 h-3" />
