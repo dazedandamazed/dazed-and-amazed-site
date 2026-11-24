@@ -20,14 +20,21 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { to: "/", label: "Browse" },
   { to: "/random", label: "Shuffle" },
-  // { to: "/thought", label: "Thoughts" },
+  // { to: "/thought", label: "Thoughts" }, // Temporarily hidden until editorial essays are populated
   { to: "/submit", label: "Contribute" },
   { to: "/about", label: "About" },
 ]
 
 export function Root() {
   const location = useLocation()
-  const isActive = (path: string) => location.pathname === path
+
+  // Browse stays active on both home "/" and inside any "/video/:id" overlay
+  const isActive = (path: string) => {
+    if (path === "/") {
+      return location.pathname === "/" || location.pathname.startsWith("/video")
+    }
+    return location.pathname === path
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -41,8 +48,9 @@ export function Root() {
           </Link>
 
           <div className="flex shrink-0 items-center gap-2">
+            {/* Desktop Navigation */}
             <nav
-              className="hidden items-center xl:flex"
+              className="hidden items-center gap-1 xl:flex"
               aria-label="Primary navigation"
             >
               {navigationItems.map(({ to, label }) => (
@@ -60,6 +68,7 @@ export function Root() {
               ))}
             </nav>
 
+            {/* Mobile Navigation Drawer */}
             <div className="xl:hidden">
               <Sheet>
                 <SheetTrigger
@@ -70,28 +79,28 @@ export function Root() {
                 </SheetTrigger>
                 <SheetContent
                   side="right"
-                  className="border-white bg-black pt-14 text-white"
+                  className="border-none border-l-0 bg-black pt-16 px-6 text-white shadow-none outline-none"
                 >
-                  <SheetHeader>
-                    <SheetTitle className="font-['JetBrains_Mono'] text-[18px] font-extrabold uppercase leading-[18px] tracking-[-0.36px] text-white">
-                      Menu
-                    </SheetTitle>
+                  <SheetHeader className="text-left mb-6">
+                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                     <SheetDescription className="sr-only">
                       Choose a page to visit
                     </SheetDescription>
                   </SheetHeader>
+
+                  {/* Left-aligned items with exact desktop badge dimensions and radius */}
                   <nav
-                    className="flex flex-col items-stretch gap-2 px-4"
+                    className="flex flex-col items-start gap-3.5"
                     aria-label="Mobile navigation"
                   >
                     {navigationItems.map(({ to, label }) => (
                       <SheetClose key={to} asChild>
                         <Link
                           to={to}
-                          className={`rounded-md px-4 py-3 font-['JetBrains_Mono'] text-[18px] font-extrabold uppercase leading-[18px] tracking-[-0.36px] transition-colors ${
+                          className={`w-fit rounded-md px-3 py-[5px] font-['JetBrains_Mono'] text-[18px] font-extrabold uppercase leading-[18px] tracking-[-0.36px] transition-colors ${
                             isActive(to)
                               ? "bg-[#D9E800] text-black"
-                              : "text-white hover:bg-white hover:text-black"
+                              : "text-white hover:bg-white hover:text-black active:bg-[#D9E800] active:text-black"
                           }`}
                         >
                           {label}
