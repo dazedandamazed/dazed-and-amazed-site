@@ -1,16 +1,8 @@
 import { Link, Outlet, useLocation } from "react-router"
-import { Menu } from "lucide-react"
+import { Menu, X } from "lucide-react"
+import { useState, useEffect } from "react"
 import { Logo } from "./Logo"
 import { LanguageToggle } from "./LanguageToggle"
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "./ui/sheet"
 
 interface NavigationItem {
   to: string
@@ -27,8 +19,9 @@ const navigationItems: NavigationItem[] = [
 
 export function Root() {
   const location = useLocation()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  // Browse stays active on both home "/" and inside any "/video/:id" overlay
+  // Keep Browse highlighted on home "/" and inside any "/video/:id" overlay
   const isActive = (path: string) => {
     if (path === "/") {
       return location.pathname === "/" || location.pathname.startsWith("/video")
@@ -36,14 +29,38 @@ export function Root() {
     return location.pathname === path
   }
 
+  // Close mobile menu automatically on page navigation
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [location.pathname])
+
+  // Prevent background scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = "unset"
+    }
+    return () => {
+      document.body.style.overflow = "unset"
+    }
+  }, [isMobileMenuOpen])
+
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Sticky Header: always pinned and preserved on mobile */}
       <header
         className="sticky top-0 z-50 bg-black"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 xl:h-[100px] xl:px-8">
-          <Link to="/" className="flex min-w-0 items-center" aria-label="Dazed and Amazed home">
+          {/* Logo never disappears */}
+          <Link
+            to="/"
+            className="flex min-w-0 items-center"
+            aria-label="Dazed and Amazed home"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
             <Logo />
           </Link>
 
@@ -68,53 +85,50 @@ export function Root() {
               ))}
             </nav>
 
-            {/* Mobile Navigation Drawer */}
+            {/* Mobile Menu In-Place Toggle Button */}
             <div className="xl:hidden">
-              <Sheet>
-                <SheetTrigger
-                  className="inline-flex size-9 items-center justify-center rounded-md text-white transition-colors outline-none hover:bg-white hover:text-black focus-visible:ring-2 focus-visible:ring-[#D9E800]"
-                  aria-label="Open navigation"
-                >
-                  <Menu className="size-5" />
-                </SheetTrigger>
-                <SheetContent
-                  side="right"
-                  className="border-none border-l-0 bg-black pt-16 px-6 text-white shadow-none outline-none"
-                >
-                  <SheetHeader className="text-left mb-6">
-                    <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                    <SheetDescription className="sr-only">
-                      Choose a page to visit
-                    </SheetDescription>
-                  </SheetHeader>
-
-                  {/* Left-aligned items with exact desktop badge dimensions and radius */}
-                  <nav
-                    className="flex flex-col items-start gap-3.5"
-                    aria-label="Mobile navigation"
-                  >
-                    {navigationItems.map(({ to, label }) => (
-                      <SheetClose key={to} asChild>
-                        <Link
-                          to={to}
-                          className={`w-fit rounded-md px-3 py-[5px] font-['JetBrains_Mono'] text-[18px] font-extrabold uppercase leading-[18px] tracking-[-0.36px] transition-colors ${
-                            isActive(to)
-                              ? "bg-[#D9E800] text-black"
-                              : "text-white hover:bg-white hover:text-black active:bg-[#D9E800] active:text-black"
-                          }`}
-                        >
-                          {label}
-                        </Link>
-                      </SheetClose>
-                    ))}
-                  </nav>
-                </SheetContent>
-              </Sheet>
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="inline-flex size-9 items-center justify-center rounded-md text-white transition-colors outline-none hover:bg-white hover:text-black focus-visible:ring-2 focus-visible:ring-[#D9E800]"
+                aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="size-5 transition-transform duration-200" />
+                ) : (
+                  <Menu className="size-5 transition-transform duration-200" />
+                )}
+              </button>
             </div>
 
+            {/* Language Toggle remains visible and accessible */}
             <LanguageToggle />
           </div>
         </div>
+
+        {/* Bespoke Mobile Navigation Curtain (Starts directly below header) */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-x-0 top-20 bottom-0 z-40 overflow-y-auto bg-black/95 px-6 py-8 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 xl:hidden">
+            <nav
+              className="mx-auto flex max-w-7xl flex-col items-end gap-5 pr-2"
+              aria-label="Mobile navigation"
+            >
+              {navigationItems.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`w-fit rounded-md px-3 py-[5px] font-['JetBrains_Mono'] text-[18px] font-extrabold uppercase leading-[18px] tracking-[-0.36px] transition-colors ${
+                    isActive(to)
+                      ? "bg-[#D9E800] text-black"
+                      : "text-white hover:bg-white hover:text-black active:bg-[#D9E800] active:text-black"
+                  }`}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        )}
       </header>
 
       <main>
