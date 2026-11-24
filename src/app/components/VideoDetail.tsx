@@ -1,11 +1,9 @@
 import { useParams, useNavigate, Link } from "react-router"
 import {
   ExternalLink,
-  ArrowLeft,
   X,
   ChevronLeft,
   ChevronRight,
-  Shuffle,
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useLanguage } from "../contexts/LanguageContext"
@@ -84,12 +82,12 @@ export function VideoDetail() {
 
   const video = videos[currentIndex]
 
-  // Reset playback error state when video changes
+  // Reset error state when video changes
   useEffect(() => {
     setPlaybackError(false)
   }, [id])
 
-  // Listen for YouTube/Vimeo error postMessages from iframe
+  // Listen for YouTube/Vimeo error postMessages
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
       try {
@@ -130,16 +128,6 @@ export function VideoDetail() {
 
   const goToNext = () => {
     if (nextVideo) navigate(`/video/${nextVideo.id}`, { replace: true })
-  }
-
-  const goToRandom = () => {
-    if (videos.length <= 1) return
-    let nextId = id
-    while (nextId === id && videos.length > 1) {
-      const randomIndex = Math.floor(Math.random() * videos.length)
-      nextId = videos[randomIndex].id
-    }
-    navigate(`/video/${nextId}`, { replace: true })
   }
 
   // Lock background scroll while overlay is open
@@ -225,82 +213,55 @@ export function VideoDetail() {
     : "The label blocked playback here. Guess we have to watch it on YouTube"
 
   return (
-    // Overlay positioned directly below the persistent main header
+    // Overlay positioned directly below persistent main header
     <div
       onClick={handleClose}
       className="fixed inset-x-0 bottom-0 top-20 z-40 overflow-y-auto bg-black/95 backdrop-blur-md transition-opacity duration-200 xl:top-[100px]"
     >
-      {/* Content wrapper */}
       <div
         onClick={(e) => e.stopPropagation()}
         className="min-h-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8"
       >
         <div className="mx-auto max-w-5xl">
-          {/* Subheader Toolbar: Unified controls matching site design system */}
-          <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
-            {/* Back to Archive button */}
+          {/* Top Control Bar: Strictly pure controls [ ‹ ] [ › ] [ ✕ ] */}
+          <div className="mb-6 flex items-center justify-end gap-2 border-b border-white/10 pb-4">
+            {/* Prev Video Button */}
+            {prevVideo && (
+              <button
+                onClick={goToPrev}
+                className="inline-flex size-8 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                title="Previous video (←)"
+                aria-label="Previous video"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+            )}
+
+            {/* Next Video Button */}
+            {nextVideo && (
+              <button
+                onClick={goToNext}
+                className="inline-flex size-8 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                title="Next video (→)"
+                aria-label="Next video"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            )}
+
+            {/* Dedicated Close Button */}
             <button
               onClick={handleClose}
-              className="group flex items-center space-x-2 text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800]"
-              aria-label="Back to archive"
+              className="inline-flex size-8 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+              title="Close (Esc)"
+              aria-label="Close"
             >
-              <ArrowLeft className="size-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
-              <span className="font-['JetBrains_Mono'] text-xs font-extrabold uppercase tracking-wider sm:text-sm">
-                Back to archive
-              </span>
+              <X className="size-4" />
             </button>
-
-            {/* Action controls cluster: Shuffle, Prev, Next, Close */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Shuffle button */}
-              <button
-                onClick={goToRandom}
-                className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-black px-2.5 py-1.5 font-['JetBrains_Mono'] text-xs uppercase text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:text-xs"
-                title="Shuffle another video"
-                aria-label="Shuffle another video"
-              >
-                <Shuffle className="size-3.5" />
-                <span className="hidden sm:inline">Shuffle</span>
-              </button>
-
-              {/* Prev Video Button */}
-              {prevVideo && (
-                <button
-                  onClick={goToPrev}
-                  className="inline-flex size-8 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:size-8"
-                  title="Previous video (←)"
-                  aria-label="Previous video"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-              )}
-
-              {/* Next Video Button */}
-              {nextVideo && (
-                <button
-                  onClick={goToNext}
-                  className="inline-flex size-8 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:size-8"
-                  title="Next video (→)"
-                  aria-label="Next video"
-                >
-                  <ChevronRight className="size-4" />
-                </button>
-              )}
-
-              {/* Close Button */}
-              <button
-                onClick={handleClose}
-                className="inline-flex size-8 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:size-8"
-                title="Close (Esc)"
-                aria-label="Close"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
           </div>
 
-          {/* Video Player (Pure black, borderless) */}
-          <div className="mb-6 sm:mb-8">
+          {/* Video Player */}
+          <div className="mb-8 sm:mb-10">
             <div className="relative mb-3 aspect-video overflow-hidden rounded-sm bg-black sm:mb-4">
               <iframe
                 src={getEmbedUrl(video.videoUrl)}
@@ -329,15 +290,15 @@ export function VideoDetail() {
           </div>
 
           {/* Video Info Section */}
-          <div className="space-y-5 sm:space-y-6">
-            {/* Title & Clickable Artist */}
+          <div className="space-y-6 sm:space-y-8">
+            {/* Bold, Cinematic Editorial Title & Artist */}
             <div>
-              <h1 className="mb-1 font-['JetBrains_Mono'] text-2xl font-extrabold uppercase leading-7 tracking-[-0.36px] text-white sm:mb-2 sm:text-3xl">
+              <h1 className="font-['JetBrains_Mono'] text-3xl font-extrabold uppercase leading-[1.05] tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
                 {video.title}
               </h1>
               <button
                 onClick={() => handleTagClick(video.artist)}
-                className="block cursor-pointer text-left font-['Kommuna_Demo'] text-[24px] font-normal leading-[30px] text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] sm:text-[28px] sm:leading-[33px]"
+                className="mt-2.5 block cursor-pointer text-left font-['Kommuna_Demo'] text-[30px] font-normal leading-[1.1] text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] sm:mt-3.5 sm:text-[36px] lg:text-[42px]"
                 title={`Filter by ${video.artist}`}
               >
                 {video.artist}
@@ -376,31 +337,30 @@ export function VideoDetail() {
               </div>
             )}
 
-            {/* Tags Row 1: Techniques */}
-            {video.techniques && video.techniques.length > 0 && (
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            {/* Tag Categories with matching spacing scale */}
+            <div className="space-y-2.5 sm:space-y-3">
+              {/* Techniques */}
+              {video.techniques && video.techniques.length > 0 && (
+                <div className="flex flex-wrap gap-2">
                   {video.techniques.map((technique) => (
                     <button
                       key={technique}
                       onClick={() => handleTagClick(technique)}
-                      className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                     >
                       {technique}
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Tags Row 2: Creators */}
-            {video.creators && (
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {/* Creators */}
+              {video.creators && (
+                <div className="flex flex-wrap gap-2">
                   {video.creators.director && (
                     <button
                       onClick={() => handleTagClick(video.creators.director!)}
-                      className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                     >
                       Dir: {video.creators.director}
                     </button>
@@ -410,7 +370,7 @@ export function VideoDetail() {
                       onClick={() =>
                         handleTagClick(video.creators.productionCompany!)
                       }
-                      className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                     >
                       Prod: {video.creators.productionCompany}
                     </button>
@@ -418,28 +378,26 @@ export function VideoDetail() {
                   {video.creators.dop && (
                     <button
                       onClick={() => handleTagClick(video.creators.dop!)}
-                      className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                     >
                       DOP: {video.creators.dop}
                     </button>
                   )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Tags Row 3: Decade */}
-            {video.decade && (
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {/* Decade */}
+              {video.decade && (
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => handleTagClick(video.decade)}
-                    className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                    className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                   >
                     {video.decade}
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Media Section: Stills, GIFs, BTS */}
             {video.media &&
@@ -512,7 +470,7 @@ export function VideoDetail() {
               )}
           </div>
 
-          {/* Dedicated Page Footer: Persistent across all video views */}
+          {/* Footer inside video view */}
           <footer className="mt-16 border-t border-white/10 pt-10 pb-16 sm:mt-24 sm:pt-12 sm:pb-20">
             <div className="mx-auto flex max-w-7xl flex-col items-center px-4">
               <div className="mb-4 flex h-[34px] items-center gap-6">
