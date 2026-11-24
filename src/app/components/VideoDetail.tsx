@@ -1,9 +1,15 @@
 import { useParams, useNavigate, Link } from "react-router"
-import { ExternalLink, ArrowLeft, X, ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  ExternalLink,
+  ArrowLeft,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Shuffle,
+} from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useVideoArchive } from "../hooks/useVideoArchive"
-import { LanguageToggle } from "./LanguageToggle"
 
 // Helper: renders text with markdown-style links [text](url) in brand green
 function FormattedDescription({ text }: { text: string }) {
@@ -31,7 +37,7 @@ function FormattedDescription({ text }: { text: string }) {
 
   return (
     <>
-      {parts.map((part, index) => {
+      {parts.map((part) => {
         if (typeof part === "string") {
           return part
         }
@@ -126,6 +132,17 @@ export function VideoDetail() {
     if (nextVideo) navigate(`/video/${nextVideo.id}`, { replace: true })
   }
 
+  const goToRandom = () => {
+    if (videos.length <= 1) return
+    let nextId = id
+    while (nextId === id && videos.length > 1) {
+      const randomIndex = Math.floor(Math.random() * videos.length)
+      nextId = videos[randomIndex].id
+    }
+    navigate(`/video/${nextId}`, { replace: true })
+  }
+
+  // Lock background scroll while overlay is open
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow
     document.body.style.overflow = "hidden"
@@ -134,6 +151,7 @@ export function VideoDetail() {
     }
   }, [])
 
+  // Keyboard navigation: Esc (close), ← (prev), → (next)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose()
@@ -150,7 +168,7 @@ export function VideoDetail() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
+      <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex items-center justify-center bg-black/95 backdrop-blur-md xl:top-[100px]">
         <p className="font-['JetBrains_Mono'] text-white">Loading video...</p>
       </div>
     )
@@ -158,7 +176,7 @@ export function VideoDetail() {
 
   if (!video) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+      <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md xl:top-[100px]">
         <div className="text-center">
           <h2 className="mb-4 font-['JetBrains_Mono'] text-2xl text-white">
             {error ? "Could not load video" : "Video not found"}
@@ -207,88 +225,96 @@ export function VideoDetail() {
     : "The label blocked playback here. Guess we have to watch it on YouTube"
 
   return (
+    // Overlay positioned directly below the persistent main header
     <div
       onClick={handleClose}
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-md transition-opacity duration-200"
+      className="fixed inset-x-0 bottom-0 top-20 z-40 overflow-y-auto bg-black/95 backdrop-blur-md transition-opacity duration-200 xl:top-[100px]"
     >
-      {/* Previous video arrow */}
-      {prevVideo && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            goToPrev()
-          }}
-          className="fixed left-2 top-1/2 -translate-y-1/2 z-50 rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-[#D9E800] active:text-[#D9E800] sm:left-6 sm:p-3"
-          aria-label="Previous video"
-          title="Previous (←)"
-        >
-          <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" />
-        </button>
-      )}
-
-      {/* Next video arrow */}
-      {nextVideo && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            goToNext()
-          }}
-          className="fixed right-2 top-1/2 -translate-y-1/2 z-50 rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-[#D9E800] active:text-[#D9E800] sm:right-6 sm:p-3"
-          aria-label="Next video"
-          title="Next (→)"
-        >
-          <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
-        </button>
-      )}
-
-      {/* Modal Card Content */}
+      {/* Content wrapper */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="min-h-screen px-4 py-8 sm:px-12 lg:px-16"
+        className="min-h-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8"
       >
         <div className="mx-auto max-w-5xl">
-          {/* Header Bar */}
-          <div className="mb-6 flex items-center justify-between">
+          {/* Subheader Toolbar: Unified controls matching site design system */}
+          <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
+            {/* Back to Archive button */}
             <button
               onClick={handleClose}
-              className="flex items-center space-x-2 text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800]"
+              className="group flex items-center space-x-2 text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800]"
+              aria-label="Back to archive"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="font-['JetBrains_Mono'] text-sm uppercase tracking-wider">
+              <ArrowLeft className="size-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
+              <span className="font-['JetBrains_Mono'] text-xs font-extrabold uppercase tracking-wider sm:text-sm">
                 Back to archive
               </span>
             </button>
 
-            <div className="flex items-center space-x-6">
-              <LanguageToggle />
+            {/* Action controls cluster: Shuffle, Prev, Next, Close */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Shuffle button */}
+              <button
+                onClick={goToRandom}
+                className="inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-black px-2.5 py-1.5 font-['JetBrains_Mono'] text-xs uppercase text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:text-xs"
+                title="Shuffle another video"
+                aria-label="Shuffle another video"
+              >
+                <Shuffle className="size-3.5" />
+                <span className="hidden sm:inline">Shuffle</span>
+              </button>
 
+              {/* Prev Video Button */}
+              {prevVideo && (
+                <button
+                  onClick={goToPrev}
+                  className="inline-flex size-8 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:size-8"
+                  title="Previous video (←)"
+                  aria-label="Previous video"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+              )}
+
+              {/* Next Video Button */}
+              {nextVideo && (
+                <button
+                  onClick={goToNext}
+                  className="inline-flex size-8 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:size-8"
+                  title="Next video (→)"
+                  aria-label="Next video"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              )}
+
+              {/* Close Button */}
               <button
                 onClick={handleClose}
-                className="rounded p-2 text-white transition-colors hover:bg-white/10 hover:text-[#D9E800] active:text-[#D9E800]"
-                aria-label="Close"
+                className="inline-flex size-8 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:size-8"
                 title="Close (Esc)"
+                aria-label="Close"
               >
-                <X className="w-6 h-6" />
+                <X className="size-4" />
               </button>
             </div>
           </div>
 
-          {/* Video Player (Clean black box, no white border artifact) */}
-          <div className="mb-8">
-            <div className="relative aspect-video bg-black rounded-sm overflow-hidden mb-4">
+          {/* Video Player (Pure black, borderless) */}
+          <div className="mb-6 sm:mb-8">
+            <div className="relative mb-3 aspect-video overflow-hidden rounded-sm bg-black sm:mb-4">
               <iframe
                 src={getEmbedUrl(video.videoUrl)}
                 title={`${video.artist} - ${video.title}`}
-                className="w-full h-full border-0 outline-none block"
+                className="block size-full border-0 outline-none"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
               />
             </div>
 
-            {/* Fallback notice: rendered ONLY when playback error is detected */}
+            {/* Fallback notice: rendered ONLY when playback is blocked */}
             {(playbackError || !video.videoUrl) && video.videoDirectUrl && (
-              <div className="text-center pt-1 animate-in fade-in duration-300">
+              <div className="pt-1 text-center animate-in fade-in duration-300">
                 <a
                   href={video.videoDirectUrl}
                   target="_blank"
@@ -296,22 +322,22 @@ export function VideoDetail() {
                   className="inline-flex items-center space-x-1 text-sm text-[#D9E800] transition-opacity hover:opacity-80 active:opacity-70"
                 >
                   <span>{fallbackText}</span>
-                  <ExternalLink className="w-3.5 h-3.5 ml-1 inline" />
+                  <ExternalLink className="ml-1 inline size-3.5" />
                 </a>
               </div>
             )}
           </div>
 
-          {/* Video Info */}
-          <div className="space-y-6">
+          {/* Video Info Section */}
+          <div className="space-y-5 sm:space-y-6">
             {/* Title & Clickable Artist */}
             <div>
-              <h1 className="mb-2 font-['JetBrains_Mono'] text-2xl font-extrabold uppercase leading-7 tracking-[-0.36px] text-white sm:text-3xl">
+              <h1 className="mb-1 font-['JetBrains_Mono'] text-2xl font-extrabold uppercase leading-7 tracking-[-0.36px] text-white sm:mb-2 sm:text-3xl">
                 {video.title}
               </h1>
               <button
                 onClick={() => handleTagClick(video.artist)}
-                className="block text-left font-['Kommuna_Demo'] text-[28px] font-normal leading-[33px] text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] cursor-pointer"
+                className="block cursor-pointer text-left font-['Kommuna_Demo'] text-[24px] font-normal leading-[30px] text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] sm:text-[28px] sm:leading-[33px]"
                 title={`Filter by ${video.artist}`}
               >
                 {video.artist}
@@ -323,14 +349,14 @@ export function VideoDetail() {
               <div className="max-w-3xl">
                 <p
                   lang={language}
-                  className="whitespace-pre-line leading-relaxed text-white text-base sm:text-lg"
+                  className="whitespace-pre-line text-sm leading-relaxed text-white sm:text-base sm:leading-relaxed"
                 >
                   <FormattedDescription text={description} />
                 </p>
               </div>
             )}
 
-            {/* Sources */}
+            {/* External Sources Links */}
             {video.links && video.links.length > 0 && (
               <div className="space-y-2">
                 <div className="flex flex-col items-start gap-2">
@@ -340,10 +366,10 @@ export function VideoDetail() {
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800]"
+                      className="inline-flex items-center gap-1.5 text-xs text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] sm:text-sm"
                     >
                       <span>{link.label}</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="size-3 sm:size-3.5" />
                     </a>
                   ))}
                 </div>
@@ -352,77 +378,83 @@ export function VideoDetail() {
 
             {/* Tags Row 1: Techniques */}
             {video.techniques && video.techniques.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {video.techniques.map((technique) => (
-                  <button
-                    key={technique}
-                    onClick={() => handleTagClick(technique)}
-                    className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
-                  >
-                    {technique}
-                  </button>
-                ))}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {video.techniques.map((technique) => (
+                    <button
+                      key={technique}
+                      onClick={() => handleTagClick(technique)}
+                      className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                    >
+                      {technique}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
             {/* Tags Row 2: Creators */}
             {video.creators && (
-              <div className="flex flex-wrap gap-2">
-                {video.creators.director && (
-                  <button
-                    onClick={() => handleTagClick(video.creators.director!)}
-                    className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
-                  >
-                    Dir: {video.creators.director}
-                  </button>
-                )}
-                {video.creators.productionCompany && (
-                  <button
-                    onClick={() =>
-                      handleTagClick(video.creators.productionCompany!)
-                    }
-                    className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
-                  >
-                    Prod: {video.creators.productionCompany}
-                  </button>
-                )}
-                {video.creators.dop && (
-                  <button
-                    onClick={() => handleTagClick(video.creators.dop!)}
-                    className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
-                  >
-                    DOP: {video.creators.dop}
-                  </button>
-                )}
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {video.creators.director && (
+                    <button
+                      onClick={() => handleTagClick(video.creators.director!)}
+                      className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                    >
+                      Dir: {video.creators.director}
+                    </button>
+                  )}
+                  {video.creators.productionCompany && (
+                    <button
+                      onClick={() =>
+                        handleTagClick(video.creators.productionCompany!)
+                      }
+                      className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                    >
+                      Prod: {video.creators.productionCompany}
+                    </button>
+                  )}
+                  {video.creators.dop && (
+                    <button
+                      onClick={() => handleTagClick(video.creators.dop!)}
+                      className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                    >
+                      DOP: {video.creators.dop}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
             {/* Tags Row 3: Decade */}
             {video.decade && (
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => handleTagClick(video.decade)}
-                  className="rounded-sm bg-black border border-white/20 px-3 py-1.5 text-sm leading-5 text-white transition-colors hover:bg-[#D9E800] hover:text-black hover:border-[#D9E800] active:bg-[#D9E800] active:text-black active:border-[#D9E800]"
-                >
-                  {video.decade}
-                </button>
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  <button
+                    onClick={() => handleTagClick(video.decade)}
+                    className="rounded-sm border border-white/20 bg-black px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-4 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black sm:px-3 sm:py-1.5 sm:text-sm sm:leading-5"
+                  >
+                    {video.decade}
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Media Section */}
+            {/* Media Section: Stills, GIFs, BTS */}
             {video.media &&
               (video.media.stills || video.media.gifs || video.media.bts) && (
-                <div className="border-t border-white/20 pt-8">
-                  <h2 className="mb-6 font-['JetBrains_Mono'] text-2xl text-white">
+                <div className="border-t border-white/20 pt-6 sm:pt-8">
+                  <h2 className="mb-4 font-['JetBrains_Mono'] text-xl text-white sm:mb-6 sm:text-2xl">
                     Media & Behind the Scenes
                   </h2>
 
                   {/* Stills */}
                   {video.media.stills && video.media.stills.length > 0 && (
-                    <div className="mb-8">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="mb-6 sm:mb-8">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
                         {video.media.stills.map((still) => (
-                          <figure key={still.src} className="space-y-2">
+                          <figure key={still.src} className="space-y-1.5">
                             <img
                               src={still.src}
                               alt={still.alt}
@@ -436,7 +468,7 @@ export function VideoDetail() {
                                 className="inline-flex items-center gap-1 text-xs text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800]"
                               >
                                 <span>Original post</span>
-                                <ExternalLink className="w-3 h-3" />
+                                <ExternalLink className="size-3" />
                               </a>
                             )}
                           </figure>
@@ -447,8 +479,8 @@ export function VideoDetail() {
 
                   {/* GIFs */}
                   {video.media.gifs && video.media.gifs.length > 0 && (
-                    <div className="mb-8">
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="mb-6 sm:mb-8">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
                         {video.media.gifs.map((gif, index) => (
                           <img
                             key={index}
@@ -464,7 +496,7 @@ export function VideoDetail() {
                   {/* BTS */}
                   {video.media.bts && video.media.bts.length > 0 && (
                     <div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
                         {video.media.bts.map((btsItem, index) => (
                           <img
                             key={index}
@@ -479,6 +511,44 @@ export function VideoDetail() {
                 </div>
               )}
           </div>
+
+          {/* Dedicated Page Footer: Persistent across all video views */}
+          <footer className="mt-16 border-t border-white/10 pt-10 pb-16 sm:mt-24 sm:pt-12 sm:pb-20">
+            <div className="mx-auto flex max-w-7xl flex-col items-center px-4">
+              <div className="mb-4 flex h-[34px] items-center gap-6">
+                <a
+                  href="https://instagram.com/dazed_amazed"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white transition-colors hover:text-[#D9E800]"
+                  aria-label="Instagram"
+                >
+                  <img src="/assets/instagram.svg" alt="" width="30" height="30" />
+                </a>
+                <a
+                  href="https://t.me/dazedandamazed"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white transition-colors hover:text-[#D9E800]"
+                  aria-label="Telegram"
+                >
+                  <img src="/assets/telegram.svg" alt="" width="30" height="30" />
+                </a>
+                <a
+                  href="https://youtube.com/@dazed.and.amazed?si=UdiTpnLe1S9a9diK"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white transition-colors hover:text-[#D9E800]"
+                  aria-label="YouTube"
+                >
+                  <img src="/assets/youtube.svg" alt="" width="35" height="30" />
+                </a>
+              </div>
+              <p className="text-center text-sm leading-5 text-white">
+                A curated collection of music videos with top-tier craft and direction.
+              </p>
+            </div>
+          </footer>
         </div>
       </div>
     </div>
