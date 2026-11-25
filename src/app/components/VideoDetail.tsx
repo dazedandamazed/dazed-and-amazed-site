@@ -5,7 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-import { useEffect, useLayoutEffect, useMemo, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useVideoArchive } from "../hooks/useVideoArchive"
 import { getYouTubeWatchUrl } from "../youtube"
@@ -78,6 +78,7 @@ export function VideoDetail() {
   const { videos, loading, error } = useVideoArchive()
   const [playbackError, setPlaybackError] = useState(false)
   const [headerBottom, setHeaderBottom] = useState(0)
+  const detailViewRef = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
     const header = document.getElementById("site-header")
@@ -97,6 +98,10 @@ export function VideoDetail() {
       window.removeEventListener("resize", updateHeaderBottom)
     }
   }, [])
+
+  useLayoutEffect(() => {
+    if (detailViewRef.current) detailViewRef.current.scrollTop = 0
+  }, [id])
 
   const currentIndex = useMemo(() => {
     return videos.findIndex((v) => v.id === id)
@@ -245,6 +250,7 @@ export function VideoDetail() {
   return (
     // Keep the detail view below the sticky site header.
     <div
+      ref={detailViewRef}
       onClick={handleClose}
       style={{ top: headerBottom }}
       className="fixed inset-x-0 bottom-0 z-40 overflow-y-auto bg-black/95 backdrop-blur-md transition-opacity duration-200"

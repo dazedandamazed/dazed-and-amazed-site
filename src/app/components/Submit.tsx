@@ -172,7 +172,7 @@ export function Submit() {
           <div className="grid gap-8 sm:grid-cols-2">
             <div>
               <label htmlFor="dop" className={labelClassName}>
-                Director of Photography (DOP)
+                Director of Photography
               </label>
               <input
                 type="text"
@@ -227,7 +227,7 @@ export function Submit() {
 
           <button
             type="submit"
-            className="inline-flex h-9 items-center rounded-md bg-[#D9E800] px-4 font-['JetBrains_Mono'] text-[18px] font-extrabold uppercase leading-[18px] tracking-[-0.36px] text-black transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="inline-flex h-9 items-center rounded-md bg-[#FFFFFF] px-4 font-['JetBrains_Mono'] text-[18px] font-extrabold uppercase leading-[18px] tracking-[-0.36px] text-black transition-colors hover:bg-[#D9E800] focus-visible:outline-none focus-visible:ring-2 focus-visible:bg-[#D9E800]"
           >
             Submit video
           </button>
