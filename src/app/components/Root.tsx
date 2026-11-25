@@ -54,7 +54,7 @@ export function Root() {
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 xl:h-[100px] xl:px-8">
-          {/* Logo never disappears */}
+          {/* Logo */}
           <Link
             to="/"
             className="flex min-w-0 items-center"
@@ -100,14 +100,14 @@ export function Root() {
               </button>
             </div>
 
-            {/* Language Toggle remains visible and accessible */}
+            {/* Language Toggle */}
             <LanguageToggle />
           </div>
         </div>
 
-        {/* Bespoke Mobile Navigation Curtain (Starts directly below header) */}
+        {/* Mobile Navigation Dropdown */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-x-0 top-20 bottom-0 z-40 overflow-y-auto bg-black/95 px-6 py-8 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 xl:hidden">
+          <div className="fixed inset-x-0 bottom-0 top-20 z-40 overflow-y-auto bg-black/95 px-6 py-8 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 xl:hidden">
             <nav
               className="mx-auto flex max-w-7xl flex-col items-end gap-5 pr-2"
               aria-label="Mobile navigation"
@@ -135,41 +135,53 @@ export function Root() {
         <Outlet />
       </main>
 
-      <footer className="mt-20">
-        <div className="mx-auto flex max-w-7xl flex-col items-center px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-4 flex h-[34px] items-center gap-6">
+      {/* Redesigned Minimalist Footer */}
+      <footer className="mt-20 border-t border-white/20 pt-10 pb-16">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 px-4 sm:px-6 lg:px-8">
+          {/* Custom PNG Social Icons */}
+          <div className="flex items-center gap-6">
             <a
               href="https://instagram.com/dazed_amazed"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white transition-colors hover:text-[#D9E800]"
+              className="transition-opacity hover:opacity-75"
               aria-label="Instagram"
             >
-              <img src="/assets/instagram.svg" alt="" width="30" height="30" />
+              <img src="/assets/instagram.png" alt="Instagram" className="size-6 object-contain" />
             </a>
             <a
               href="https://t.me/dazedandamazed"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white transition-colors hover:text-[#D9E800]"
+              className="transition-opacity hover:opacity-75"
               aria-label="Telegram"
             >
-              <img src="/assets/telegram.svg" alt="" width="30" height="30" />
+              <img src="/assets/telegram.png" alt="Telegram" className="size-6 object-contain" />
             </a>
             <a
               href="https://youtube.com/@dazed.and.amazed?si=UdiTpnLe1S9a9diK"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white transition-colors hover:text-[#D9E800]"
+              className="transition-opacity hover:opacity-75"
               aria-label="YouTube"
             >
-              <img src="/assets/youtube.svg" alt="" width="35" height="30" />
+              <img src="/assets/youtube.png" alt="YouTube" className="h-6 w-auto object-contain" />
             </a>
           </div>
-          <p className="text-center text-sm leading-5 text-white">
-            A curated collection of music videos with top-tier craft and
-            direction.
-          </p>
+
+          {/* Minimalist Editorial Legal & Credits Line */}
+          <div className="flex flex-col items-center gap-2 text-center font-['JetBrains_Mono'] text-xs uppercase tracking-widest text-white/50 sm:flex-row sm:gap-4">
+            <span>Curated by Polina Varfolomeeva</span>
+            <span className="hidden text-white/20 sm:inline">•</span>
+            <span>© 2026</span>
+            <span className="hidden text-white/20 sm:inline">•</span>
+            <Link
+              to="/terms"
+              className="underline underline-offset-4 transition-colors hover:text-[#D9E800]"
+            >
+              Terms & Conditions
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
