@@ -1,8 +1,9 @@
 import { Link, Outlet, useLocation } from "react-router"
 import { Menu, X } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Logo } from "./Logo"
 import { LanguageToggle } from "./LanguageToggle"
+import { Footer } from "./Footer"
 
 interface NavigationItem {
   to: string
@@ -12,7 +13,7 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { to: "/", label: "Browse" },
   { to: "/random", label: "Shuffle" },
-  // { to: "/thought", label: "Thoughts" }, // Temporarily hidden until editorial essays are populated
+  // { to: "/thought", label: "Thoughts" },
   { to: "/submit", label: "Contribute" },
   { to: "/about", label: "About" },
 ]
@@ -20,6 +21,13 @@ const navigationItems: NavigationItem[] = [
 export function Root() {
   const location = useLocation()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [mobileMenuTop, setMobileMenuTop] = useState(0)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const headerRef = useRef<HTMLElement | null>(null)
+  const isHeaderCollapsed =
+    isScrolled ||
+    location.pathname.startsWith("/video/") ||
+    location.pathname === "/random"
 
   // Keep Browse highlighted on home "/" and inside any "/video/:id" overlay
   const isActive = (path: string) => {
@@ -29,10 +37,28 @@ export function Root() {
     return location.pathname === path
   }
 
-  // Close mobile menu automatically on page navigation
+  // Close mobile menu automatically on navigation
   useEffect(() => {
     setIsMobileMenuOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    let scrolled = window.scrollY > 40
+    setIsScrolled(scrolled)
+
+    const updateScrolledState = () => {
+      if (!scrolled && window.scrollY > 40) {
+        scrolled = true
+        setIsScrolled(true)
+      } else if (scrolled && window.scrollY < 8) {
+        scrolled = false
+        setIsScrolled(false)
+      }
+    }
+
+    window.addEventListener("scroll", updateScrolledState, { passive: true })
+    return () => window.removeEventListener("scroll", updateScrolledState)
+  }, [])
 
   // Prevent background scroll when mobile menu is open
   useEffect(() => {
@@ -46,28 +72,68 @@ export function Root() {
     }
   }, [isMobileMenuOpen])
 
+  useEffect(() => {
+    if (!isMobileMenuOpen || !headerRef.current) return
+
+    const header = headerRef.current
+    const updateMenuTop = () => setMobileMenuTop(header.getBoundingClientRect().bottom)
+    const resizeObserver = new ResizeObserver(updateMenuTop)
+
+    resizeObserver.observe(header)
+    window.addEventListener("resize", updateMenuTop)
+    updateMenuTop()
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener("resize", updateMenuTop)
+    }
+  }, [isMobileMenuOpen])
+
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Sticky Header: always pinned and preserved on mobile */}
+      {/* Sticky Header */}
       <header
+        id="site-header"
+        ref={headerRef}
         className="sticky top-0 z-50 bg-black"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 xl:h-[100px] xl:px-8">
-          {/* Logo */}
+        <div
+          className={`mx-auto grid w-full max-w-[1600px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-4 transition-[padding,gap] duration-300 sm:px-8 lg:px-14 2xl:px-20 ${
+            isHeaderCollapsed
+              ? "py-2 lg:flex lg:items-center lg:justify-between"
+              : "gap-y-3 pt-3 pb-3 lg:items-end lg:gap-y-4"
+          }`}
+        >
           <Link
             to="/"
-            className="flex min-w-0 items-center"
+            className={`col-start-1 row-start-1 flex w-fit items-center ${
+              isHeaderCollapsed
+                ? "justify-self-start"
+                : "justify-self-start lg:col-span-2 lg:row-start-2 lg:mt-3 lg:justify-self-center"
+            }`}
             aria-label="Dazed and Amazed home"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <Logo />
+            <Logo
+              className={
+                isHeaderCollapsed
+                  ? "w-[min(calc(100vw_-_200px),_220px)] lg:w-[220px]"
+                  : "w-[min(calc(100vw_-_140px),_307px)] lg:w-[min(calc(100vw_-_716px),_540px)]"
+              }
+            />
           </Link>
 
-          <div className="flex shrink-0 items-center gap-2">
-            {/* Desktop Navigation */}
+          {!isHeaderCollapsed && (
+            <p className="col-span-2 row-start-2 min-w-0 font-['JetBrains_Mono'] text-[18px] font-bold uppercase leading-[1.15] tracking-normal text-white lg:col-span-1 lg:col-start-1 lg:row-start-1">
+              <span className="block lg:whitespace-nowrap">A curated collection of music videos</span>
+              <span className="block lg:whitespace-nowrap">with top-tier craft and direction</span>
+            </p>
+          )}
+
+          <div className="col-start-2 row-start-1 flex shrink-0 items-center justify-self-end gap-3 lg:col-start-2 lg:row-start-1">
             <nav
-              className="hidden items-center gap-1 xl:flex"
+              className="hidden items-center gap-1 min-[900px]:flex"
               aria-label="Primary navigation"
             >
               {navigationItems.map(({ to, label }) => (
@@ -85,10 +151,15 @@ export function Root() {
               ))}
             </nav>
 
-            {/* Mobile Menu In-Place Toggle Button */}
-            <div className="xl:hidden">
+            {/* Mobile Menu Button */}
+            <div className="min-[900px]:hidden">
               <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={() => {
+                  if (!isMobileMenuOpen) {
+                    setMobileMenuTop(headerRef.current?.getBoundingClientRect().bottom ?? 0)
+                  }
+                  setIsMobileMenuOpen(!isMobileMenuOpen)
+                }}
                 className="inline-flex size-9 items-center justify-center rounded-md text-white transition-colors outline-none hover:bg-white hover:text-black focus-visible:ring-2 focus-visible:ring-[#D9E800]"
                 aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}
               >
@@ -100,16 +171,18 @@ export function Root() {
               </button>
             </div>
 
-            {/* Language Toggle */}
             <LanguageToggle />
           </div>
         </div>
 
         {/* Mobile Navigation Dropdown */}
         {isMobileMenuOpen && (
-          <div className="fixed inset-x-0 bottom-0 top-20 z-40 overflow-y-auto bg-black/95 px-6 py-8 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 xl:hidden">
+          <div
+            style={{ top: `${mobileMenuTop}px` }}
+            className="fixed inset-x-0 bottom-0 z-40 overflow-y-auto bg-black/95 px-6 py-8 backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200 min-[900px]:hidden"
+          >
             <nav
-              className="mx-auto flex max-w-7xl flex-col items-end gap-5 pr-2"
+              className="flex w-full flex-col items-end gap-5 pr-2"
               aria-label="Mobile navigation"
             >
               {navigationItems.map(({ to, label }) => (
@@ -135,55 +208,8 @@ export function Root() {
         <Outlet />
       </main>
 
-      {/* Redesigned Minimalist Footer */}
-      <footer className="mt-20 border-t border-white/20 pt-10 pb-16">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 px-4 sm:px-6 lg:px-8">
-          {/* Custom PNG Social Icons */}
-          <div className="flex items-center gap-6">
-            <a
-              href="https://instagram.com/dazed_amazed"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-opacity hover:opacity-75"
-              aria-label="Instagram"
-            >
-              <img src="/assets/instagram.png" alt="Instagram" className="size-6 object-contain" />
-            </a>
-            <a
-              href="https://t.me/dazedandamazed"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-opacity hover:opacity-75"
-              aria-label="Telegram"
-            >
-              <img src="/assets/telegram.png" alt="Telegram" className="size-6 object-contain" />
-            </a>
-            <a
-              href="https://youtube.com/@dazed.and.amazed?si=UdiTpnLe1S9a9diK"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-opacity hover:opacity-75"
-              aria-label="YouTube"
-            >
-              <img src="/assets/youtube.png" alt="YouTube" className="h-6 w-auto object-contain" />
-            </a>
-          </div>
-
-          {/* Minimalist Editorial Legal & Credits Line */}
-          <div className="flex flex-col items-center gap-2 text-center font-['JetBrains_Mono'] text-xs uppercase tracking-widest text-white/50 sm:flex-row sm:gap-4">
-            <span>Curated by Polina Varfolomeeva</span>
-            <span className="hidden text-white/20 sm:inline">•</span>
-            <span>© 2026</span>
-            <span className="hidden text-white/20 sm:inline">•</span>
-            <Link
-              to="/terms"
-              className="underline underline-offset-4 transition-colors hover:text-[#D9E800]"
-            >
-              Terms & Conditions
-            </Link>
-          </div>
-        </div>
-      </footer>
+      {/* Full-width Minimalist Footer */}
+      <Footer />
     </div>
   )
 }

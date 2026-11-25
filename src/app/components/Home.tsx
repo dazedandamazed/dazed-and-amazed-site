@@ -5,22 +5,16 @@ import { useVideoArchive } from "../hooks/useVideoArchive"
 import { VideoCard } from "./VideoCard"
 import { Search, X } from "lucide-react"
 
-const ITEMS_PER_PAGE = 12
+const ITEMS_PER_PAGE = 16
 
-// Curated quick-access tags for the horizontal pill bar
-const QUICK_TAGS = [
-  "35mm / Film",
-  "Split Screen",
-  "One Take",
-  "CGI",
-  "Stop Motion",
-  "Surrealism",
-  "Practical FX",
-  "Choreography",
-  "Black & White",
-  "Storytelling",
-  "Miniatures",
-]
+type GridColumnCount = 2 | 3 | 4 | 5
+
+const thumbnailSizes: Record<GridColumnCount, string> = {
+  2: "(min-width: 1536px) calc((100vw - 176px) / 2), (min-width: 1024px) calc((100vw - 144px) / 2), (min-width: 768px) calc((100vw - 96px) / 2), (min-width: 640px) calc(100vw - 64px), calc(100vw - 48px)",
+  3: "(min-width: 1536px) calc((100vw - 208px) / 3), (min-width: 1024px) calc((100vw - 176px) / 3), (min-width: 640px) calc((100vw - 88px) / 2), calc(100vw - 48px)",
+  4: "(min-width: 1536px) calc((100vw - 224px) / 4), (min-width: 1280px) calc((100vw - 192px) / 4), (min-width: 1024px) calc((100vw - 160px) / 3), (min-width: 640px) calc((100vw - 88px) / 2), calc(100vw - 48px)",
+  5: "(min-width: 1536px) calc((100vw - 256px) / 5), (min-width: 1280px) calc((100vw - 192px) / 4), (min-width: 1024px) calc((100vw - 160px) / 3), (min-width: 640px) calc((100vw - 88px) / 2), calc(100vw - 48px)",
+}
 
 function shuffle(arr: Video[]): Video[] {
   const a = [...arr]
@@ -35,50 +29,95 @@ export function Home() {
   const { videos, loading, error } = useVideoArchive()
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState("")
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [baseList, setBaseList] = useState<Video[]>([])
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE)
   const [placeholder, setPlaceholder] = useState("Search archive")
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window === "undefined" ? 0 : window.innerWidth,
+  )
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  // Grid density: 2 (cinema), 3 (standard), 4 (dense). Saved in localStorage
-  const [gridCols, setGridCols] = useState<2 | 3 | 4>(() => {
+  // Grid columns: 2, 3, 4 or 5 columns on massive displays
+  const [gridCols, setGridCols] = useState<GridColumnCount>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("dazed_grid_cols")
-      if (saved === "2" || saved === "3" || saved === "4") {
-        return Number(saved) as 2 | 3 | 4
+      if (saved === "2" || saved === "3" || saved === "4" || saved === "5") {
+        return Number(saved) as 2 | 3 | 4 | 5
       }
     }
-    return 2
+    return 3 // Default 3 columns for balanced desktop view
   })
 
-  const handleSetGridCols = (cols: 2 | 3 | 4) => {
+  const maxGridCols: GridColumnCount =
+    viewportWidth >= 1536
+      ? 5
+      : viewportWidth >= 1280
+        ? 4
+        : viewportWidth >= 1024
+          ? 3
+          : 2
+  const activeGridCols =
+    gridCols > maxGridCols ? maxGridCols : gridCols
+
+  const handleSetGridCols = (cols: GridColumnCount) => {
     setGridCols(cols)
     if (typeof window !== "undefined") {
       localStorage.setItem("dazed_grid_cols", String(cols))
     }
   }
 
-  // Responsive search placeholder for mobile vs desktop
+  // Show technique tags used by at least three videos.
+  const allDynamicTags = useMemo(() => {
+    const tagCounts = new Map<string, { label: string; count: number }>()
+
+    videos.forEach((v) => {
+      if (Array.isArray(v.techniques)) {
+        const videoTags = new Map<string, string>()
+        v.techniques.forEach((t) => {
+          const cleaned = t.trim()
+          const normalized = cleaned.toLowerCase()
+          if (normalized && !videoTags.has(normalized)) {
+            videoTags.set(normalized, cleaned)
+          }
+        })
+
+        videoTags.forEach((label, normalized) => {
+          const existing = tagCounts.get(normalized)
+          if (existing) {
+            existing.count += 1
+          } else {
+            tagCounts.set(normalized, { label, count: 1 })
+          }
+        })
+      }
+    })
+
+    return Array.from(tagCounts.values())
+      .filter(({ count }) => count >= 3)
+      .map(({ label }) => label)
+      .sort((a, b) => a.localeCompare(b))
+  }, [videos])
+
   useEffect(() => {
-    const updatePlaceholder = () => {
+    const updateResponsiveState = () => {
+      setViewportWidth(window.innerWidth)
       if (window.innerWidth >= 640) {
         setPlaceholder("Search by title, artist, technique, director...")
       } else {
         setPlaceholder("Search archive")
       }
-    };
-    updatePlaceholder()
-    window.addEventListener("resize", updatePlaceholder)
-    return () => window.removeEventListener("resize", updatePlaceholder)
+    }
+    updateResponsiveState()
+    window.addEventListener("resize", updateResponsiveState)
+    return () => window.removeEventListener("resize", updateResponsiveState)
   }, [])
 
-  // Shuffle after Supabase archive loads
   useEffect(() => {
     setBaseList(shuffle(videos))
   }, [videos])
 
-  // Sync ?filter= URL query param with activeTags state
   useEffect(() => {
     const filter = searchParams.get("filter")
     if (filter) {
@@ -88,12 +127,11 @@ export function Home() {
     }
   }, [searchParams])
 
-  // Reset visible count when filters or base list change
   useEffect(() => {
     setVisibleCount(ITEMS_PER_PAGE)
   }, [searchQuery, activeTags, baseList])
 
-  // Universal Full-Text Search and Multi-Tag Filtering
+  // Full-Text Search across all fields including descriptions
   const filteredVideos = useMemo(() => {
     let result = baseList
 
@@ -142,7 +180,6 @@ export function Home() {
     return result
   }, [baseList, searchQuery, activeTags])
 
-  // Infinite Scroll IntersectionObserver
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
@@ -152,7 +189,7 @@ export function Home() {
           setVisibleCount((n) => Math.min(n + ITEMS_PER_PAGE, filteredVideos.length))
         }
       },
-      { rootMargin: "400px" }
+      { rootMargin: "600px" }
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -179,36 +216,35 @@ export function Home() {
     setSearchParams({})
   }
 
-  // Dynamic grid class based on grid density selector
+  // Dynamic Full-Bleed Grid Classes based on Density Switcher
   const gridClass = useMemo(() => {
-    if (gridCols === 4) {
-      return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8"
+    if (activeGridCols === 5) {
+      return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 lg:gap-8"
     }
-    if (gridCols === 3) {
-      return "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-10"
+    if (activeGridCols === 4) {
+      return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8"
     }
-    return "grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12"
-  }, [gridCols])
+    if (activeGridCols === 3) {
+      return "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10"
+    }
+    return "grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12"
+  }, [activeGridCols])
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* 1. Concise Editorial Statement (Single Line) */}
-      <div className="mb-6 text-center">
-        <p className="font-['Kommuna_Demo'] text-lg font-normal tracking-wide text-white sm:text-xl lg:text-2xl">
-          A curated collection of music videos with top-tier craft and direction.
-        </p>
-      </div>
-
-      {/* 2. Search Bar: Exact 28px height matching Browse button, keeping signature green border */}
-      <div className="mx-auto mb-8 flex h-[28px] w-full max-w-[672px] items-center">
+    // FULL-BLEED container across the entire monitor!
+    <div className="w-full px-5 py-8 sm:px-8 sm:py-10 lg:px-14 lg:py-12 2xl:px-20 2xl:py-14">
+      {/* Search Bar: 28px height with signature green border */}
+      <div className="mx-auto mb-10 flex h-[28px] w-full max-w-[672px] items-center">
         <div className="relative h-[28px] w-full">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-[12px] -translate-y-1/2 text-white sm:left-4" />
           <input
             type="text"
-            placeholder={placeholder}
+            placeholder={isSearchFocused ? "" : placeholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-[28px] w-full rounded-md border border-[#D9E800] bg-black pl-8 pr-8 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-[28px] text-white placeholder:text-white/80 focus:outline-none sm:pl-10 sm:pr-10 sm:text-base"
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            className="h-[28px] w-full rounded-md border border-[#D9E800] bg-black pl-8 pr-8 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-[28px] text-white placeholder:text-white/50 focus:outline-none sm:pl-10 sm:pr-10 sm:text-base"
           />
           {searchQuery && (
             <button
@@ -222,11 +258,10 @@ export function Home() {
         </div>
       </div>
 
-      {/* 3. Horizontal Tag Pills Bar & Toolbar */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/20 pb-4">
-        {/* Scrollable Tag Pills (Same design token as video tags) */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-          {/* 'All' pill */}
+      {/* 3. Full-Bleed Tag Bar & Grid Switcher spanning the entire screen */}
+      <div className="mb-10 flex flex-col gap-4 border-b border-white/20 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Horizontal Tag Pills (Bleeds freely across the screen) */}
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto no-scrollbar py-1">
           <button
             onClick={clearAllFilters}
             className={`rounded-sm px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 transition-colors shrink-0 cursor-pointer ${
@@ -238,8 +273,7 @@ export function Home() {
             All
           </button>
 
-          {/* Curated quick technique pills */}
-          {QUICK_TAGS.map((tag) => {
+          {allDynamicTags.map((tag) => {
             const isSelected = activeTags.includes(tag)
             return (
               <button
@@ -257,95 +291,100 @@ export function Home() {
           })}
         </div>
 
-        {/* Right side controls: Count & Grid density switcher */}
-        <div className="flex shrink-0 items-center justify-between gap-4 sm:justify-end">
-          {/* Results Count */}
-          <span className="font-['JetBrains_Mono'] text-xs uppercase tracking-wider text-white/80">
-            {loading
-              ? "Loading..."
-              : `${filteredVideos.length} ${
-                  filteredVideos.length === 1 ? "video" : "videos"
-                }`}
-          </span>
+        {/* Minimalist Grid Density Switcher (2 / 3 / 4 / 5 columns) */}
+        <div className="hidden shrink-0 items-center gap-0.5 rounded-sm border border-white/20 bg-black p-0.5 md:inline-flex">
+          {/* 2 Cols */}
+          <button
+            onClick={() => handleSetGridCols(2)}
+            className={`flex h-6 items-center justify-center rounded-[2px] px-2 font-['JetBrains_Mono'] text-xs transition-colors ${
+              activeGridCols === 2
+                ? "bg-[#D9E800] font-bold text-black"
+                : "text-white/60 hover:text-white"
+            }`}
+            title="2 columns view"
+          >
+            ||
+          </button>
 
-          {/* Minimalist Grid Column Switcher: 2 / 3 / 4 columns */}
-          <div className="hidden sm:inline-flex items-center rounded-sm border border-white/20 bg-black p-0.5 gap-0.5">
-            {/* 2 Columns: || */}
-            <button
-              onClick={() => handleSetGridCols(2)}
-              className={`flex h-6 items-center justify-center rounded-[2px] px-2 font-['JetBrains_Mono'] text-xs transition-colors ${
-                gridCols === 2
-                  ? "bg-[#D9E800] font-bold text-black"
-                  : "text-white/60 hover:text-white"
-              }`}
-              title="2 columns view"
-              aria-label="2 columns view"
-            >
-              ||
-            </button>
+          {/* 3 Cols */}
+          <button
+            onClick={() => handleSetGridCols(3)}
+            className={`hidden h-6 items-center justify-center rounded-[2px] px-2 font-['JetBrains_Mono'] text-xs transition-colors lg:flex ${
+              activeGridCols === 3
+                ? "bg-[#D9E800] font-bold text-black"
+                : "text-white/60 hover:text-white"
+            }`}
+            title="3 columns view"
+          >
+            |||
+          </button>
 
-            {/* 3 Columns: ||| */}
-            <button
-              onClick={() => handleSetGridCols(3)}
-              className={`flex h-6 items-center justify-center rounded-[2px] px-2 font-['JetBrains_Mono'] text-xs transition-colors ${
-                gridCols === 3
-                  ? "bg-[#D9E800] font-bold text-black"
-                  : "text-white/60 hover:text-white"
-              }`}
-              title="3 columns view"
-              aria-label="3 columns view"
-            >
-              |||
-            </button>
+          {/* 4 Cols */}
+          <button
+            onClick={() => handleSetGridCols(4)}
+            className={`hidden h-6 items-center justify-center rounded-[2px] px-2 font-['JetBrains_Mono'] text-xs transition-colors xl:flex ${
+              activeGridCols === 4
+                ? "bg-[#D9E800] font-bold text-black"
+                : "text-white/60 hover:text-white"
+            }`}
+            title="4 columns view"
+          >
+            ||||
+          </button>
 
-            {/* 4 Columns: |||| */}
-            <button
-              onClick={() => handleSetGridCols(4)}
-              className={`flex h-6 items-center justify-center rounded-[2px] px-2 font-['JetBrains_Mono'] text-xs transition-colors ${
-                gridCols === 4
-                  ? "bg-[#D9E800] font-bold text-black"
-                  : "text-white/60 hover:text-white"
-              }`}
-              title="4 columns view (dense)"
-              aria-label="4 columns view"
-            >
-              ||||
-            </button>
-          </div>
+          {/* 5 Cols (EyeCandy Mode for 27" screens) */}
+          <button
+            onClick={() => handleSetGridCols(5)}
+            className={`hidden h-6 items-center justify-center rounded-[2px] px-2 font-['JetBrains_Mono'] text-xs transition-colors 2xl:flex ${
+              activeGridCols === 5
+                ? "bg-[#D9E800] font-bold text-black"
+                : "text-white/60 hover:text-white"
+            }`}
+            title="5 columns (EyeCandy wide mode)"
+          >
+            |||||
+          </button>
         </div>
       </div>
 
-      {/* Active Filter Chips (if any custom search or tag applied) */}
+      {/* Active filters */}
       {(activeTags.length > 0 || searchQuery) && (
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="text-xs uppercase tracking-wider text-white/60 font-['JetBrains_Mono']">
-            Filtered:
+        <div className="mb-8 flex flex-wrap items-center gap-x-2 gap-y-2">
+          <span className="mr-1 font-['JetBrains_Mono'] text-[10px] font-bold uppercase tracking-normal text-white/50">
+            Filters
           </span>
           {activeTags.map((tag) => (
             <button
               key={tag}
               onClick={() => handleTagClick(tag)}
-              className="flex items-center space-x-1.5 rounded-sm border border-[#D9E800] bg-[#D9E800] px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm text-black transition-opacity hover:opacity-90"
+              aria-label={`Remove ${tag} filter`}
+              className="inline-flex items-center gap-1.5 rounded-sm border border-white/20 bg-white/[0.03] px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs text-white/80 transition-colors hover:border-[#D9E800] hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D9E800]"
             >
               <span>{tag}</span>
-              <X className="size-3.5" />
+              <X className="size-3 text-white/50" />
             </button>
           ))}
           {searchQuery && (
-            <span className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm text-white">
-              Search: &quot;{searchQuery}&quot;
-            </span>
+            <button
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search filter"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-white/20 bg-white/[0.03] px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs text-white/80 transition-colors hover:border-[#D9E800] hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D9E800]"
+            >
+              <span className="text-white/50">Search</span>
+              <span>&quot;{searchQuery}&quot;</span>
+              <X className="size-3 text-white/50" />
+            </button>
           )}
           <button
             onClick={clearAllFilters}
-            className="text-xs uppercase tracking-wider text-white underline hover:text-[#D9E800] font-['JetBrains_Mono'] ml-2"
+            className="ml-1 font-['JetBrains_Mono'] text-[10px] font-bold uppercase tracking-normal text-white/60 underline-offset-4 hover:text-[#D9E800] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D9E800]"
           >
-            Clear all
+            Clear filters
           </button>
         </div>
       )}
 
-      {/* Dynamic Video Grid */}
+      {/* Wall-to-Wall Immersive Video Grid */}
       {error ? (
         <div className="py-20 text-center">
           <p className="text-lg text-white">{error}</p>
@@ -357,13 +396,14 @@ export function Home() {
               <VideoCard
                 key={video.id}
                 video={video}
+                imageSizes={thumbnailSizes[activeGridCols]}
                 onTagClick={handleTagClick}
               />
             ))}
           </div>
 
           {hasMore && (
-            <div ref={sentinelRef} className="flex justify-center py-12">
+            <div ref={sentinelRef} className="flex justify-center py-16">
               <span className="font-['JetBrains_Mono'] text-xs uppercase tracking-widest text-white/60">
                 Loading more...
               </span>
@@ -383,7 +423,7 @@ export function Home() {
               </p>
               <button
                 onClick={clearAllFilters}
-                className="mt-4 rounded-sm border border-[#D9E800] bg-[#D9E800] px-6 py-2 font-['JetBrains_Mono'] text-sm uppercase text-black transition-opacity hover:opacity-90"
+                className="mt-4 rounded-sm border border-[#D9E800] bg-[#D9E800] px-6 py-2 font-['JetBrains_Mono'] text-sm font-bold uppercase tracking-normal text-black transition-opacity hover:opacity-90"
               >
                 Clear Filters
               </button>

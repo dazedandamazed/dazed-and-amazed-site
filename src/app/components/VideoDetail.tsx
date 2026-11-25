@@ -5,9 +5,10 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useVideoArchive } from "../hooks/useVideoArchive"
+import { Footer } from "./Footer"
 
 // Helper: renders text with markdown-style links [text](url) in brand green
 function FormattedDescription({ text }: { text: string }) {
@@ -75,6 +76,26 @@ export function VideoDetail() {
   const { language } = useLanguage()
   const { videos, loading, error } = useVideoArchive()
   const [playbackError, setPlaybackError] = useState(false)
+  const [headerBottom, setHeaderBottom] = useState(0)
+
+  useLayoutEffect(() => {
+    const header = document.getElementById("site-header")
+    if (!header) return
+
+    const updateHeaderBottom = () => {
+      setHeaderBottom(header.getBoundingClientRect().bottom)
+    }
+    const resizeObserver = new ResizeObserver(updateHeaderBottom)
+
+    resizeObserver.observe(header)
+    window.addEventListener("resize", updateHeaderBottom)
+    updateHeaderBottom()
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener("resize", updateHeaderBottom)
+    }
+  }, [])
 
   const currentIndex = useMemo(() => {
     return videos.findIndex((v) => v.id === id)
@@ -156,7 +177,10 @@ export function VideoDetail() {
 
   if (loading) {
     return (
-      <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex items-center justify-center bg-black/95 backdrop-blur-md xl:top-[100px]">
+      <div
+        style={{ top: headerBottom }}
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center bg-black/95 backdrop-blur-md"
+      >
         <p className="font-['JetBrains_Mono'] text-white">Loading video...</p>
       </div>
     )
@@ -164,7 +188,10 @@ export function VideoDetail() {
 
   if (!video) {
     return (
-      <div className="fixed inset-x-0 bottom-0 top-20 z-40 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md xl:top-[100px]">
+      <div
+        style={{ top: headerBottom }}
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md"
+      >
         <div className="text-center">
           <h2 className="mb-4 font-['JetBrains_Mono'] text-2xl text-white">
             {error ? "Could not load video" : "Video not found"}
@@ -213,10 +240,11 @@ export function VideoDetail() {
     : "The label blocked playback here. Guess we have to watch it on YouTube"
 
   return (
-    // Overlay positioned directly below persistent main header
+    // Keep the detail view below the sticky site header.
     <div
       onClick={handleClose}
-      className="fixed inset-x-0 bottom-0 top-20 z-40 overflow-y-auto bg-black/95 backdrop-blur-md transition-opacity duration-200 xl:top-[100px]"
+      style={{ top: headerBottom }}
+      className="fixed inset-x-0 bottom-0 z-40 overflow-y-auto bg-black/95 backdrop-blur-md transition-opacity duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -471,52 +499,7 @@ export function VideoDetail() {
           </div>
 
        {/* Footer inside video view */}
-          <footer className="mt-16 border-t border-white/20 pt-10 pb-16 sm:mt-24 sm:pt-12 sm:pb-20">
-            <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 px-4">
-              <div className="flex items-center gap-6">
-                <a
-                  href="https://instagram.com/dazed_amazed"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="transition-opacity hover:opacity-75"
-                  aria-label="Instagram"
-                >
-                  <img src="/assets/instagram.png" alt="Instagram" className="size-6 object-contain" />
-                </a>
-                <a
-                  href="https://t.me/dazedandamazed"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="transition-opacity hover:opacity-75"
-                  aria-label="Telegram"
-                >
-                  <img src="/assets/telegram.png" alt="Telegram" className="size-6 object-contain" />
-                </a>
-                <a
-                  href="https://youtube.com/@dazed.and.amazed?si=UdiTpnLe1S9a9diK"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="transition-opacity hover:opacity-75"
-                  aria-label="YouTube"
-                >
-                  <img src="/assets/youtube.png" alt="YouTube" className="h-6 w-auto object-contain" />
-                </a>
-              </div>
-
-              <div className="flex flex-col items-center gap-2 text-center font-['JetBrains_Mono'] text-xs uppercase tracking-widest text-white/50 sm:flex-row sm:gap-4">
-                <span>Curated by Polina Varfolomeeva</span>
-                <span className="hidden text-white/20 sm:inline">•</span>
-                <span>© 2026</span>
-                <span className="hidden text-white/20 sm:inline">•</span>
-                <Link
-                  to="/terms"
-                  className="underline underline-offset-4 transition-colors hover:text-[#D9E800]"
-                >
-                  Terms & Conditions
-                </Link>
-              </div>
-            </div>
-          </footer>
+          <Footer />
         </div>
       </div>
     </div>

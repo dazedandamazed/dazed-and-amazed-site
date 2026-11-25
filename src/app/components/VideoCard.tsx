@@ -4,8 +4,28 @@ import { Link } from "react-router";
 
 interface VideoCardProps {
   video: Video;
+  imageSizes: string;
   onTagClick: (tag: string, type: "technique" | "creator" | "decade") => void;
 }
+
+function getYouTubeThumbnailSources(thumbnail: string) {
+  const match = thumbnail.match(/^https?:\/\/i\d*\.ytimg\.com\/vi\/([^/]+)\//)
+  if (!match) return null
+
+  const baseUrl = `https://i.ytimg.com/vi/${match[1]}`
+  return {
+    fallbacks: [`${baseUrl}/sddefault.jpg`, `${baseUrl}/hqdefault.jpg`],
+    srcSet: [
+      `${baseUrl}/hqdefault.jpg 480w`,
+      `${baseUrl}/sddefault.jpg 640w`,
+      `${baseUrl}/maxresdefault.jpg 1280w`,
+    ].join(", "),
+  }
+}
+
+const videoTagListClassName = "flex flex-wrap gap-1.5 @md:gap-2"
+const videoTagClassName =
+  "rounded-sm border border-white/20 bg-black px-2 py-0.5 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black @md:px-3 @md:py-1 @md:text-sm"
 
 function withAutoplay(url: string): string {
   try {
@@ -17,15 +37,18 @@ function withAutoplay(url: string): string {
   }
 }
 
-export function VideoCard({ video, onTagClick }: VideoCardProps) {
+export function VideoCard({ video, imageSizes, onTagClick }: VideoCardProps) {
   const [playing, setPlaying] = useState(false);
+  const [thumbnailFallbackIndex, setThumbnailFallbackIndex] = useState(0);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
 
   const embedUrl = playing ? withAutoplay(video.videoUrl) : video.videoUrl;
+  const youtubeThumbnailSources = getYouTubeThumbnailSources(video.thumbnail);
 
   return (
-    <div className="group">
+    <div className="group @container">
       {/* Video Player / Thumbnail */}
-      <div className="relative mb-4 aspect-video overflow-hidden rounded-sm bg-black">
+      <div className="relative mb-3 aspect-video overflow-hidden rounded-sm bg-black @md:mb-4">
         {playing ? (
           <iframe
             src={embedUrl}
@@ -41,11 +64,33 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
             className="group/thumb relative block size-full"
             aria-label={`Play ${video.title} by ${video.artist}`}
           >
-            {video.thumbnail ? (
+            {video.thumbnail && !thumbnailFailed ? (
               <img
-                src={video.thumbnail}
+                src={
+                  thumbnailFallbackIndex > 0 && youtubeThumbnailSources
+                    ? youtubeThumbnailSources.fallbacks[thumbnailFallbackIndex - 1]
+                    : video.thumbnail
+                }
+                srcSet={
+                  thumbnailFallbackIndex > 0
+                    ? undefined
+                    : youtubeThumbnailSources?.srcSet
+                }
+                sizes={imageSizes}
                 alt={`${video.artist} - ${video.title}`}
+                loading="lazy"
+                decoding="async"
                 className="size-full object-cover transition-opacity duration-200 group-hover/thumb:opacity-75"
+                onError={() => {
+                  if (
+                    youtubeThumbnailSources &&
+                    thumbnailFallbackIndex < youtubeThumbnailSources.fallbacks.length
+                  ) {
+                    setThumbnailFallbackIndex((index) => index + 1);
+                  } else {
+                    setThumbnailFailed(true);
+                  }
+                }}
               />
             ) : (
               <span className="flex size-full items-center justify-center px-6 text-center font-['JetBrains_Mono'] text-sm font-extrabold uppercase text-white">
@@ -57,17 +102,17 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
       </div>
 
       {/* Video Info */}
-      <div className="space-y-4">
+      <div className="space-y-3 @md:space-y-4">
         {/* Title & Artist with generous breathing room */}
         <div>
           <Link to={`/video/${video.id}`}>
-            <h3 className="cursor-pointer font-['JetBrains_Mono'] text-2xl font-extrabold uppercase leading-tight tracking-[-0.36px] transition-colors hover:text-[#D9E800]">
+            <h3 className="cursor-pointer font-['JetBrains_Mono'] text-lg font-extrabold uppercase leading-tight tracking-[-0.36px] transition-colors hover:text-[#D9E800] @sm:text-xl @md:text-[22px] @xl:text-2xl">
               {video.title}
             </h3>
           </Link>
           <button
             onClick={() => onTagClick(video.artist, "creator")}
-            className="mt-2 block cursor-pointer text-left font-['Kommuna_Demo'] text-[28px] font-normal leading-[33px] text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800]"
+            className="mt-1.5 block cursor-pointer text-left font-['Kommuna_Demo'] text-xl font-normal leading-tight text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] @md:mt-2 @sm:text-2xl @lg:text-[28px]"
             title={`Filter by ${video.artist}`}
           >
             {video.artist}
@@ -75,15 +120,15 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
         </div>
 
         {/* Tag Categories with consistent spacing scale */}
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {/* Techniques */}
           {video.techniques && video.techniques.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className={videoTagListClassName}>
               {video.techniques.map((technique) => (
                 <button
                   key={technique}
                   onClick={() => onTagClick(technique, "technique")}
-                  className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                  className={videoTagClassName}
                 >
                   {technique}
                 </button>
@@ -93,11 +138,11 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
 
           {/* Creators */}
           {video.creators && (
-            <div className="flex flex-wrap gap-2">
+            <div className={videoTagListClassName}>
               {video.creators.director && (
                 <button
                   onClick={() => onTagClick(video.creators.director!, "creator")}
-                  className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                  className={videoTagClassName}
                 >
                   Dir: {video.creators.director}
                 </button>
@@ -107,7 +152,7 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
                   onClick={() =>
                     onTagClick(video.creators.productionCompany!, "creator")
                   }
-                  className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                  className={videoTagClassName}
                 >
                   Prod: {video.creators.productionCompany}
                 </button>
@@ -115,7 +160,7 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
               {video.creators.dop && (
                 <button
                   onClick={() => onTagClick(video.creators.dop!, "creator")}
-                  className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                  className={videoTagClassName}
                 >
                   DOP: {video.creators.dop}
                 </button>
@@ -125,10 +170,10 @@ export function VideoCard({ video, onTagClick }: VideoCardProps) {
 
           {/* Decade */}
           {video.decade && (
-            <div className="flex flex-wrap gap-2">
+            <div className={videoTagListClassName}>
               <button
                 onClick={() => onTagClick(video.decade, "decade")}
-                className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                className={videoTagClassName}
               >
                 {video.decade}
               </button>
