@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react"
 
 export function Terms() {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20 text-white">
       <Link
         to="/"
         className="group mb-8 inline-flex items-center space-x-2 text-white transition-colors hover:text-[#D9E800]"
