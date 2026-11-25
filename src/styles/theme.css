@@ -91,7 +91,7 @@
   body {
     @apply text-foreground;
     background-color: var(--background);
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Helvetica Neue';
   }
 
   /**
@@ -131,7 +131,7 @@
   }
 
   p {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Helvetica Neue';
     font-weight: 400;
   }
 

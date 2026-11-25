@@ -288,7 +288,7 @@ export function Home() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            className="h-[28px] w-full rounded-md border border-[#D9E800] bg-black pl-8 pr-8 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-[28px] text-white placeholder:text-white/50 focus:outline-none sm:pl-10 sm:pr-10 sm:text-base"
+            className="h-[28px] w-full rounded-md border border-[#D9E800] bg-black pl-8 pr-8 font-['Helvetica_Neue'] text-sm leading-[28px] text-white placeholder:text-white/50 focus:outline-none sm:pl-10 sm:pr-10 sm:text-base"
           />
           {searchQuery && (
             <button
@@ -313,7 +313,7 @@ export function Home() {
             <div className="flex w-max items-center gap-2">
               <button
                 onClick={clearAllFilters}
-                className={`rounded-sm px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 transition-colors shrink-0 cursor-pointer ${
+                className={`rounded-sm px-3 py-1 font-['Helvetica_Neue'] text-sm leading-5 transition-colors shrink-0 cursor-pointer ${
                   activeTags.length === 0 && !searchQuery
                     ? "bg-[#D9E800] text-black border border-[#D9E800]"
                     : "border border-white/20 bg-black text-white hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
@@ -328,7 +328,7 @@ export function Home() {
                   <button
                     key={tag}
                     onClick={() => handleTagClick(tag)}
-                    className={`rounded-sm px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 transition-colors shrink-0 cursor-pointer ${
+                    className={`rounded-sm px-3 py-1 font-['Helvetica_Neue'] text-sm leading-5 transition-colors shrink-0 cursor-pointer ${
                       isSelected
                         ? "bg-[#D9E800] text-black border border-[#D9E800]"
                         : "border border-white/20 bg-black text-white hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
@@ -415,7 +415,7 @@ export function Home() {
               key={tag}
               onClick={() => handleTagClick(tag)}
               aria-label={`Remove ${tag} filter`}
-              className="inline-flex items-center gap-1.5 rounded-sm border border-white/20 bg-white/[0.03] px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs text-white/80 transition-colors hover:border-[#D9E800] hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D9E800]"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-white/20 bg-white/[0.03] px-2.5 py-1 font-['Helvetica_Neue'] text-xs text-white/80 transition-colors hover:border-[#D9E800] hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D9E800]"
             >
               <span>{tag}</span>
               <X className="size-3 text-white/50" />
@@ -425,7 +425,7 @@ export function Home() {
             <button
               onClick={() => setSearchQuery("")}
               aria-label="Clear search filter"
-              className="inline-flex items-center gap-1.5 rounded-sm border border-white/20 bg-white/[0.03] px-2.5 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs text-white/80 transition-colors hover:border-[#D9E800] hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D9E800]"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-white/20 bg-white/[0.03] px-2.5 py-1 font-['Helvetica_Neue'] text-xs text-white/80 transition-colors hover:border-[#D9E800] hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D9E800]"
             >
               <span className="text-white/50">Search</span>
               <span>&quot;{searchQuery}&quot;</span>

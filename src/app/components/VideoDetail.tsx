@@ -383,7 +383,7 @@ export function VideoDetail() {
                     <button
                       key={technique}
                       onClick={() => handleTagClick(technique)}
-                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue'] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                     >
                       {technique}
                     </button>
@@ -397,7 +397,7 @@ export function VideoDetail() {
                   {video.creators.director && (
                     <button
                       onClick={() => handleTagClick(video.creators.director!)}
-                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue'] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                     >
                       Dir: {video.creators.director}
                     </button>
@@ -407,7 +407,7 @@ export function VideoDetail() {
                       onClick={() =>
                         handleTagClick(video.creators.productionCompany!)
                       }
-                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue'] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                     >
                       Prod: {video.creators.productionCompany}
                     </button>
@@ -415,7 +415,7 @@ export function VideoDetail() {
                   {video.creators.dop && (
                     <button
                       onClick={() => handleTagClick(video.creators.dop!)}
-                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                      className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue'] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                     >
                       DOP: {video.creators.dop}
                     </button>
@@ -428,7 +428,7 @@ export function VideoDetail() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => handleTagClick(video.decade)}
-                    className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                    className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue'] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                   >
                     {video.decade}
                   </button>

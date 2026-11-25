@@ -39,7 +39,7 @@ function isYouTubeThumbnail(url: string): boolean {
 
 const videoTagListClassName = "flex flex-wrap gap-1.5 @md:gap-2"
 const videoTagClassName =
-  "rounded-sm border border-white/20 bg-black px-2 py-0.5 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-xs leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black @md:px-3 @md:py-1 @md:text-sm"
+  "rounded-sm border border-white/20 bg-black px-2 py-0.5 font-['Helvetica_Neue'] text-xs leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black @md:px-3 @md:py-1 @md:text-sm"
 
 function withAutoplay(url: string): string {
   try {

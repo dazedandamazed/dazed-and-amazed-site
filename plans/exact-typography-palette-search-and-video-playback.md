@@ -14,7 +14,7 @@ Bring the current React/Vite site into exact typographic and geometric alignment
 - Use the uploaded **Kommuna Demo / 400 Narrow** face for both:
   - Band/artist names
   - `En` / `Ru` language toggle
-- Keep the existing body/search stack: `"Helvetica Neue", Helvetica, Arial, sans-serif`.
+- Use only `"Helvetica Neue"` for body and search typography.
 - Use **JetBrains Mono ExtraBold (800)** for headings, video titles, and navigation.
 - Keep all YouTube embeds on `https://www.youtube-nocookie.com`.
 - Preserve the card share button and video-detail share controls.
@@ -23,7 +23,7 @@ Bring the current React/Vite site into exact typographic and geometric alignment
 
 - `src/styles/index.css` imports `src/styles/fonts.css`, so `fonts.css` is the correct reachable font entry point.
 - Figma Make settings now expose `Kommuna Demo / 400 Narrow`; `figma fonts resolve` successfully returns a WOFF2 payload.
-- Figma does not expose `Helvetica Neue / Regular`; the user chose to retain the current local Helvetica stack.
+- Figma does not expose `Helvetica Neue / Regular`; use the installed `Helvetica Neue` family without substitute fonts.
 - JetBrains Mono is already loaded from Google Fonts, but the project also has a redundant Figma CDN `@font-face` alias. Consolidate this to one family/source.
 - Space Grotesk is currently used as a Kommuna substitute and should be removed.
 - The design reference specifies:
@@ -55,7 +55,7 @@ Bring the current React/Vite site into exact typographic and geometric alignment
 4. Normalize callsites:
    - Use `"JetBrains Mono"` at weight 800 rather than the synthetic family name `"JetBrains Mono:ExtraBold"`.
    - Use `"Kommuna Demo"` for artist names and the language toggle.
-   - Retain `"Helvetica Neue", Helvetica, Arial, sans-serif` for body copy, inputs, labels, tags, and footer copy.
+   - Use only `"Helvetica Neue"` for body copy, inputs, labels, tags, and footer copy.
 5. Do not synthesize or alias unavailable font family names.
 
 ### 2. Match exact typography and proportions

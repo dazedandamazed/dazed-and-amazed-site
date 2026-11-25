@@ -18,7 +18,7 @@ export function Terms() {
         Terms & Conditions
       </h1>
 
-      <div className="space-y-6 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-base leading-relaxed text-white/80">
+      <div className="space-y-6 font-['Helvetica_Neue'] text-base leading-relaxed text-white/80">
         <p>
           This platform is an independent, educational, non-commercial curated archive
           dedicated to the study and appreciation of music video craft, direction,
