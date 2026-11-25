@@ -2,7 +2,7 @@ import { useState } from "react"
 import { CheckCircle2 } from "lucide-react"
 
 const fieldClassName =
-  "w-full rounded-none border-0 border-b border-white/20 bg-black px-0 py-3 text-white placeholder:text-white/50 focus:placeholder:text-transparent outline-none transition-colors focus:border-[#D9E800] focus:ring-0"
+  "w-full rounded-none border-0 border-b border-white/20 bg-black px-0 py-3 text-white placeholder:text-white/0 focus:placeholder:text-transparent outline-none transition-colors focus:border-[#D9E800] focus:ring-0"
 const labelClassName = "font-['JetBrains_Mono'] text-xl font-bold uppercase tracking-narrow text-white mb-1 block leading-6"
 
 export function Submit() {
@@ -212,7 +212,7 @@ export function Submit() {
               onChange={handleChange}
               className={fieldClassName}
               style={{
-                color: formData.decade ? "white" : "rgb(255 255 255 / 50%)",
+                color: formData.decade ? "white" : "rgb(255 255 255 / 1%)",
               }}
             >
               <option value="">Select decade</option>

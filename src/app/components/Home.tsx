@@ -39,6 +39,8 @@ export function Home() {
   )
   const [showBackToTop, setShowBackToTop] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const tagScrollerRef = useRef<HTMLDivElement>(null)
+  const [hasMoreTagsToRight, setHasMoreTagsToRight] = useState(false)
 
   // Grid columns: 2, 3, 4 or 5 columns on massive displays
   const [gridCols, setGridCols] = useState<GridColumnCount>(() => {
@@ -100,6 +102,34 @@ export function Home() {
       .map(({ label }) => label)
       .sort((a, b) => a.localeCompare(b))
   }, [videos])
+
+  useEffect(() => {
+    const tagScroller = tagScrollerRef.current
+    if (!tagScroller) return
+
+    const updateTagOverflow = () => {
+      setHasMoreTagsToRight(
+        tagScroller.scrollLeft + tagScroller.clientWidth <
+          tagScroller.scrollWidth - 1,
+      )
+    }
+
+    updateTagOverflow()
+    tagScroller.addEventListener("scroll", updateTagOverflow, {
+      passive: true,
+    })
+
+    const resizeObserver = new ResizeObserver(updateTagOverflow)
+    resizeObserver.observe(tagScroller)
+    if (tagScroller.firstElementChild instanceof HTMLElement) {
+      resizeObserver.observe(tagScroller.firstElementChild)
+    }
+
+    return () => {
+      tagScroller.removeEventListener("scroll", updateTagOverflow)
+      resizeObserver.disconnect()
+    }
+  }, [allDynamicTags])
 
   useEffect(() => {
     const updateResponsiveState = () => {
@@ -275,34 +305,47 @@ export function Home() {
       {/* 3. Full-Bleed Tag Bar & Grid Switcher spanning the entire screen */}
       <div className="mb-10 flex flex-col gap-4 border-b border-white/20 pb-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Horizontal Tag Pills (Bleeds freely across the screen) */}
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto no-scrollbar py-1">
-          <button
-            onClick={clearAllFilters}
-            className={`rounded-sm px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 transition-colors shrink-0 cursor-pointer ${
-              activeTags.length === 0 && !searchQuery
-                ? "bg-[#D9E800] text-black border border-[#D9E800]"
-                : "border border-white/20 bg-black text-white hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
-            }`}
+        <div className="relative min-w-0 flex-1">
+          <div
+            ref={tagScrollerRef}
+            className="min-w-0 overflow-x-auto no-scrollbar py-1"
           >
-            All
-          </button>
-
-          {allDynamicTags.map((tag) => {
-            const isSelected = activeTags.includes(tag)
-            return (
+            <div className="flex w-max items-center gap-2">
               <button
-                key={tag}
-                onClick={() => handleTagClick(tag)}
+                onClick={clearAllFilters}
                 className={`rounded-sm px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 transition-colors shrink-0 cursor-pointer ${
-                  isSelected
+                  activeTags.length === 0 && !searchQuery
                     ? "bg-[#D9E800] text-black border border-[#D9E800]"
                     : "border border-white/20 bg-black text-white hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                 }`}
               >
-                {tag}
+                All
               </button>
-            )
-          })}
+
+              {allDynamicTags.map((tag) => {
+                const isSelected = activeTags.includes(tag)
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => handleTagClick(tag)}
+                    className={`rounded-sm px-3 py-1 font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-sm leading-5 transition-colors shrink-0 cursor-pointer ${
+                      isSelected
+                        ? "bg-[#D9E800] text-black border border-[#D9E800]"
+                        : "border border-white/20 bg-black text-white hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          {hasMoreTagsToRight && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-black via-black/75 to-transparent"
+            />
+          )}
         </div>
 
         {/* Minimalist Grid Density Switcher (2 / 3 / 4 / 5 columns) */}
@@ -393,7 +436,7 @@ export function Home() {
             onClick={clearAllFilters}
             className="ml-1 font-['JetBrains_Mono'] text-[10px] font-bold uppercase tracking-normal text-white/60 underline-offset-4 hover:text-[#D9E800] hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#D9E800]"
           >
-            Clear filters
+            Clear all
           </button>
         </div>
       )}
@@ -439,7 +482,7 @@ export function Home() {
                 onClick={clearAllFilters}
                 className="mt-4 rounded-sm border border-[#D9E800] bg-[#D9E800] px-6 py-2 font-['JetBrains_Mono'] text-sm font-bold uppercase tracking-normal text-black transition-opacity hover:opacity-90"
               >
-                Clear Filters
+                Clear all
               </button>
             </>
           )}
