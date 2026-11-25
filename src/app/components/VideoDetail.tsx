@@ -8,6 +8,7 @@ import {
 import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useVideoArchive } from "../hooks/useVideoArchive"
+import { getYouTubeWatchUrl } from "../youtube"
 import { Footer } from "./Footer"
 
 // Helper: renders text with markdown-style links [text](url) in brand green
@@ -238,6 +239,8 @@ export function VideoDetail() {
   const fallbackText = isVimeo
     ? "The creator restricted playback here. Guess we have to watch it on Vimeo"
     : "The label blocked playback here. Guess we have to watch it on YouTube"
+  const externalVideoUrl =
+    video.videoDirectUrl ?? getYouTubeWatchUrl(video.videoUrl)
 
   return (
     // Keep the detail view below the sticky site header.
@@ -302,10 +305,10 @@ export function VideoDetail() {
             </div>
 
             {/* Fallback notice: rendered ONLY when playback is blocked */}
-            {(playbackError || !video.videoUrl) && video.videoDirectUrl && (
+            {(playbackError || !video.videoUrl) && externalVideoUrl && (
               <div className="pt-1 text-center animate-in fade-in duration-300">
                 <a
-                  href={video.videoDirectUrl}
+                  href={externalVideoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center space-x-1 text-sm text-[#D9E800] transition-opacity hover:opacity-80 active:opacity-70"

@@ -1,6 +1,8 @@
 import type { Video } from "../models/video";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
+import { getYouTubeVideoId, getYouTubeWatchUrl } from "../youtube";
+import { getVideoSourceThumbnail } from "../videoThumbnails";
 
 interface VideoCardProps {
   video: Video;
@@ -8,18 +10,30 @@ interface VideoCardProps {
   onTagClick: (tag: string, type: "technique" | "creator" | "decade") => void;
 }
 
-function getYouTubeThumbnailSources(thumbnail: string) {
-  const match = thumbnail.match(/^https?:\/\/i\d*\.ytimg\.com\/vi\/([^/]+)\//)
-  if (!match) return null
+function getThumbnailCandidates(video: Video): string[] {
+  const youtubeId = getYouTubeVideoId(video.videoUrl)
+  const youtubeThumbnails = youtubeId
+    ? [
+        `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`,
+        `https://i.ytimg.com/vi/${youtubeId}/sddefault.jpg`,
+        `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`,
+        `https://i.ytimg.com/vi/${youtubeId}/0.jpg`,
+      ]
+    : []
 
-  const baseUrl = `https://i.ytimg.com/vi/${match[1]}`
-  return {
-    fallbacks: [`${baseUrl}/sddefault.jpg`, `${baseUrl}/hqdefault.jpg`],
-    srcSet: [
-      `${baseUrl}/hqdefault.jpg 480w`,
-      `${baseUrl}/sddefault.jpg 640w`,
-      `${baseUrl}/maxresdefault.jpg 1280w`,
-    ].join(", "),
+  return [
+    video.thumbnail.trim(),
+    ...(video.media?.stills ?? []).map((still) => still.src),
+    ...youtubeThumbnails,
+  ].filter((source, index, sources) => source && sources.indexOf(source) === index)
+}
+
+function isYouTubeThumbnail(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase()
+    return hostname === "img.youtube.com" || hostname.endsWith(".ytimg.com")
+  } catch {
+    return false
   }
 }
 
@@ -31,6 +45,10 @@ function withAutoplay(url: string): string {
   try {
     const embed = new URL(url);
     embed.searchParams.set("autoplay", "1");
+    if (getYouTubeVideoId(url)) {
+      embed.searchParams.set("enablejsapi", "1");
+      embed.searchParams.set("origin", window.location.origin);
+    }
     return embed.toString();
   } catch {
     return url;
@@ -39,11 +57,116 @@ function withAutoplay(url: string): string {
 
 export function VideoCard({ video, imageSizes, onTagClick }: VideoCardProps) {
   const [playing, setPlaying] = useState(false);
-  const [thumbnailFallbackIndex, setThumbnailFallbackIndex] = useState(0);
-  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const [thumbnailIndex, setThumbnailIndex] = useState(0);
+  const [providerThumbnail, setProviderThumbnail] = useState<string | null>(null);
+  const [providerThumbnailFailed, setProviderThumbnailFailed] = useState(false);
+  const [embedBlocked, setEmbedBlocked] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const embedUrl = playing ? withAutoplay(video.videoUrl) : video.videoUrl;
-  const youtubeThumbnailSources = getYouTubeThumbnailSources(video.thumbnail);
+  const thumbnailCandidates = getThumbnailCandidates(video);
+  const primaryThumbnailUrl = thumbnailCandidates[thumbnailIndex];
+  const youtubeWatchUrl = getYouTubeWatchUrl(video.videoUrl);
+
+  useEffect(() => {
+    if (thumbnailIndex < thumbnailCandidates.length) return
+
+    let active = true
+    const sourceUrls = [video.videoDirectUrl, video.videoUrl].filter(
+      (url): url is string => Boolean(url),
+    )
+    getVideoSourceThumbnail(sourceUrls).then((thumbnail) => {
+      if (active) setProviderThumbnail(thumbnail)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [
+    thumbnailIndex,
+    thumbnailCandidates.length,
+    video.videoDirectUrl,
+    video.videoUrl,
+  ])
+
+  useEffect(() => {
+    if (!youtubeWatchUrl) return
+
+    const handleMessage = (event: MessageEvent) => {
+      if (
+        event.source !== iframeRef.current?.contentWindow ||
+        !["https://www.youtube.com", "https://www.youtube-nocookie.com"].includes(
+          event.origin,
+        )
+      ) {
+        return
+      }
+
+      let payload: unknown = event.data
+      if (typeof payload === "string") {
+        try {
+          payload = JSON.parse(payload)
+        } catch {
+          return
+        }
+      }
+      if (!payload || typeof payload !== "object") return
+
+      const message = payload as { event?: unknown; info?: unknown }
+      if (
+        message.event === "onError" ||
+        [100, 101, 150].includes(Number(message.info))
+      ) {
+        setEmbedBlocked(true)
+        setPlaying(false)
+      }
+    }
+
+    window.addEventListener("message", handleMessage)
+    return () => window.removeEventListener("message", handleMessage)
+  }, [youtubeWatchUrl])
+
+  const thumbnailUrl =
+    primaryThumbnailUrl ??
+    (providerThumbnailFailed ? null : providerThumbnail)
+  const thumbnailContent =
+    thumbnailUrl ? (
+      <img
+        src={thumbnailUrl}
+        sizes={imageSizes}
+        alt={`${video.artist} - ${video.title}`}
+        loading="lazy"
+        decoding="async"
+        className="size-full object-cover transition-opacity duration-200 group-hover/thumb:opacity-75"
+        onLoad={(event) => {
+          if (
+            isYouTubeThumbnail(thumbnailUrl) &&
+            event.currentTarget.naturalWidth <= 120
+          ) {
+            if (primaryThumbnailUrl) {
+              setThumbnailIndex((index) =>
+                Math.min(index + 1, thumbnailCandidates.length),
+              )
+            } else {
+              setProviderThumbnailFailed(true)
+            }
+          }
+        }}
+        onError={() => {
+          if (primaryThumbnailUrl) {
+            setThumbnailIndex((index) =>
+              Math.min(index + 1, thumbnailCandidates.length),
+            )
+          } else {
+            setProviderThumbnailFailed(true)
+          }
+        }}
+      />
+    ) : (
+      <span className="flex size-full items-center justify-center px-6 text-center font-['JetBrains_Mono'] text-sm font-extrabold uppercase text-white/60">
+        Preview unavailable
+      </span>
+    )
 
   return (
     <div className="group @container">
@@ -51,53 +174,50 @@ export function VideoCard({ video, imageSizes, onTagClick }: VideoCardProps) {
       <div className="relative mb-3 aspect-video overflow-hidden rounded-sm bg-black @md:mb-4">
         {playing ? (
           <iframe
+            ref={iframeRef}
             src={embedUrl}
             title={`${video.artist} - ${video.title}`}
             className="block size-full border-0 outline-none"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
+            onError={
+              youtubeWatchUrl
+                ? () => {
+                    setEmbedBlocked(true)
+                    setPlaying(false)
+                  }
+                : undefined
+            }
           />
         ) : (
-          <button
-            onClick={() => setPlaying(true)}
-            className="group/thumb relative block size-full"
-            aria-label={`Play ${video.title} by ${video.artist}`}
-          >
-            {video.thumbnail && !thumbnailFailed ? (
-              <img
-                src={
-                  thumbnailFallbackIndex > 0 && youtubeThumbnailSources
-                    ? youtubeThumbnailSources.fallbacks[thumbnailFallbackIndex - 1]
-                    : video.thumbnail
-                }
-                srcSet={
-                  thumbnailFallbackIndex > 0
-                    ? undefined
-                    : youtubeThumbnailSources?.srcSet
-                }
-                sizes={imageSizes}
-                alt={`${video.artist} - ${video.title}`}
-                loading="lazy"
-                decoding="async"
-                className="size-full object-cover transition-opacity duration-200 group-hover/thumb:opacity-75"
-                onError={() => {
-                  if (
-                    youtubeThumbnailSources &&
-                    thumbnailFallbackIndex < youtubeThumbnailSources.fallbacks.length
-                  ) {
-                    setThumbnailFallbackIndex((index) => index + 1);
-                  } else {
-                    setThumbnailFailed(true);
-                  }
-                }}
-              />
-            ) : (
-              <span className="flex size-full items-center justify-center px-6 text-center font-['JetBrains_Mono'] text-sm font-extrabold uppercase text-white">
-                Preview unavailable
+          embedBlocked && youtubeWatchUrl ? (
+            <a
+              href={youtubeWatchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Watch ${video.title} on YouTube`}
+              className="group/thumb relative block size-full"
+            >
+              {thumbnailContent}
+              <span className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <span className="rounded border border-white/40 bg-black/80 px-3 py-2 font-['JetBrains_Mono'] text-sm font-bold uppercase text-white">
+                  Watch on YouTube
+                </span>
               </span>
-            )}
-          </button>
+            </a>
+          ) : (
+            <button
+              onClick={() => {
+                setEmbedBlocked(false)
+                setPlaying(true)
+              }}
+              className="group/thumb relative block size-full"
+              aria-label={`Play ${video.title} by ${video.artist}`}
+            >
+              {thumbnailContent}
+            </button>
+          )
         )}
       </div>
 

@@ -8,6 +8,7 @@ import {
 } from "react"
 import { projectId, publicAnonKey } from "../../../utils/supabase/info"
 import type { Video } from "../models/video"
+import { getYouTubeVideoId } from "../youtube"
 
 function parseJson(value: unknown): unknown {
   if (typeof value !== "string") return value
@@ -37,30 +38,13 @@ function asObject(value: unknown): Record<string, any> {
     : {}
 }
 
-function youtubeId(url: string): string | null {
-  try {
-    const parsed = new URL(url)
-    if (parsed.hostname.includes("youtu.be")) return parsed.pathname.split("/")[1] ?? null
-    if (parsed.hostname.includes("youtube")) {
-      return (
-        parsed.searchParams.get("v") ??
-        parsed.pathname.match(/\/(?:embed|shorts)\/([^/]+)/)?.[1] ??
-        null
-      )
-    }
-  } catch {
-    return null
-  }
-  return null
-}
-
 function vimeoId(url: string): string | null {
   const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/)
   return match?.[1] ?? null
 }
 
 function embedUrl(url: string): string {
-  const youtube = youtubeId(url)
+  const youtube = getYouTubeVideoId(url)
   if (youtube) {
     const source = new URL(url)
     const embed = new URL(
@@ -80,41 +64,8 @@ function embedUrl(url: string): string {
   return url
 }
 
-async function hydrateVimeoThumbnails(
-  videos: Video[],
-  signal: AbortSignal,
-): Promise<Video[]> {
-  return Promise.all(
-    videos.map(async (video) => {
-      if (video.thumbnail || !video.videoDirectUrl || !vimeoId(video.videoDirectUrl)) {
-        return video
-      }
-
-      try {
-        const endpoint = new URL("https://vimeo.com/api/oembed.json")
-        endpoint.searchParams.set("url", video.videoDirectUrl)
-        const response = await fetch(endpoint, { signal })
-        if (!response.ok) return video
-
-        const payload = await response.json()
-        return typeof payload.thumbnail_url === "string" && payload.thumbnail_url
-          ? { ...video, thumbnail: payload.thumbnail_url }
-          : video
-      } catch (thumbnailError) {
-        if (
-          thumbnailError instanceof DOMException &&
-          thumbnailError.name === "AbortError"
-        ) {
-          throw thumbnailError
-        }
-        return video
-      }
-    }),
-  )
-}
-
 function fallbackId(row: Record<string, any>, url: string): string {
-  const mediaId = youtubeId(url) ?? vimeoId(url)
+  const mediaId = getYouTubeVideoId(url) ?? vimeoId(url)
   if (mediaId) return mediaId
   return String(`${row.artist ?? ""}-${row.song ?? row.title ?? ""}`)
     .toLowerCase()
@@ -156,6 +107,7 @@ function normalizeVideo(rawRow: Record<string, any>): Video | null {
   const title = row.song ?? row.title
   const artist = row.artist
   const videoUrl = row.videoUrl ?? row.video_url ?? directUrl
+  const youtube = getYouTubeVideoId(String(videoUrl ?? ""))
 
   if (!id || !title || !artist || !videoUrl) return null
 
@@ -174,13 +126,10 @@ function normalizeVideo(rawRow: Record<string, any>): Video | null {
     artist: String(artist),
     videoUrl: embedUrl(String(videoUrl)),
     videoDirectUrl: directUrl ? String(directUrl) : undefined,
-    thumbnail: String(
-      row.thumbnail ??
-        row.thumbnail_url ??
-        (youtubeId(String(videoUrl))
-          ? `https://i.ytimg.com/vi/${youtubeId(String(videoUrl))}/hqdefault.jpg`
-          : ""),
-    ),
+    thumbnail:
+      String(row.thumbnail ?? "").trim() ||
+      String(row.thumbnail_url ?? "").trim() ||
+      (youtube ? `https://i.ytimg.com/vi/${youtube}/hqdefault.jpg` : ""),
     techniques: asArray(row.techniques ?? row.tags).map((tag) =>
       tag.replaceAll("_", " "),
     ),
@@ -242,9 +191,6 @@ export function VideoArchiveProvider({ children }: { children: ReactNode }) {
 
         setVideos(normalized)
         setLoading(false)
-
-        const hydrated = await hydrateVimeoThumbnails(normalized, controller.signal)
-        if (!controller.signal.aborted) setVideos(hydrated)
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === "AbortError") {
           return

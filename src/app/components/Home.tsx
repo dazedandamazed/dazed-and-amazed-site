@@ -3,7 +3,7 @@ import { useSearchParams, Outlet } from "react-router"
 import type { Video } from "../models/video"
 import { useVideoArchive } from "../hooks/useVideoArchive"
 import { VideoCard } from "./VideoCard"
-import { Search, X } from "lucide-react"
+import { ArrowUp, Search, X } from "lucide-react"
 
 const ITEMS_PER_PAGE = 16
 
@@ -37,6 +37,7 @@ export function Home() {
   const [viewportWidth, setViewportWidth] = useState(() =>
     typeof window === "undefined" ? 0 : window.innerWidth,
   )
+  const [showBackToTop, setShowBackToTop] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Grid columns: 2, 3, 4 or 5 columns on massive displays
@@ -112,6 +113,19 @@ export function Home() {
     updateResponsiveState()
     window.addEventListener("resize", updateResponsiveState)
     return () => window.removeEventListener("resize", updateResponsiveState)
+  }, [])
+
+  useEffect(() => {
+    const updateBackToTopVisibility = () => {
+      setShowBackToTop(window.scrollY > 400)
+    }
+
+    updateBackToTopVisibility()
+    window.addEventListener("scroll", updateBackToTopVisibility, {
+      passive: true,
+    })
+    return () =>
+      window.removeEventListener("scroll", updateBackToTopVisibility)
   }, [])
 
   useEffect(() => {
@@ -434,6 +448,25 @@ export function Home() {
 
       {/* Portal for Cinema Overlay */}
       <Outlet />
+
+      {showBackToTop && (
+        <button
+          type="button"
+          onClick={() => {
+            const behavior = window.matchMedia(
+              "(prefers-reduced-motion: reduce)",
+            ).matches
+              ? "auto"
+              : "smooth"
+            window.scrollTo({ top: 0, behavior })
+          }}
+          className="fixed right-4 bottom-4 z-30 inline-flex size-10 items-center justify-center rounded-md border border-white/20 bg-black text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9E800] sm:right-8 sm:bottom-6 lg:right-14"
+          aria-label="Back to top"
+          title="Back to top"
+        >
+          <ArrowUp className="size-4" aria-hidden="true" />
+        </button>
+      )}
     </div>
   )
 }
