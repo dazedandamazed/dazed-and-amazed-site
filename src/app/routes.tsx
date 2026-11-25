@@ -6,7 +6,7 @@ import { RandomThought } from "./components/RandomThought";
 import { Submit } from "./components/Submit";
 import { VideoDetail } from "./components/VideoDetail";
 import { About } from "./components/About";
-import { Terms } from "./components/Terms";
+import { Terms } from "./components/terms";
 
 export const router = createBrowserRouter([
   {
