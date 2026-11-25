@@ -66,7 +66,12 @@ export function Footer() {
 
         {/* Row 2: Bold white footer details */}
         <div className="flex flex-col items-center justify-center gap-2 text-center font-['JetBrains_Mono'] text-[16px] font-bold uppercase leading-[14px] tracking-[-0.36px] text-white sm:flex-row sm:gap-4 sm:text-[14px]">
-          <span>Curated by Polina Varfolomeeva</span>
+          <Link
+            to="/about"
+            className="text-white transition-colors hover:text-[#D9E800]"
+          >
+            Curated by Polina Varfolomeeva
+          </Link>
           <span className="hidden sm:inline text-white">  </span>
           <span>2026</span>
           <span className="hidden sm:inline text-white">  </span>

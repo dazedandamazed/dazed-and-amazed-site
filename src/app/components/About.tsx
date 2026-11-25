@@ -6,7 +6,7 @@ export function About() {
       {/* Quiet Manifesto (Calibrated size, no divider line) */}
       <div className="mb-12 max-w-3xl lg:mb-16">
         <p className="font-['Kommuna_Demo'] text-xl font-normal leading-snug text-white sm:text-2xl lg:text-3xl">
-          A curated archive celebrating music videos with{" "}
+          An archive celebrating music videos with{" "}
           <span className="text-[#D9E800]">exceptional craft</span>,
           cinematography, and singular directorial vision.
         </p>
