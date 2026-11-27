@@ -175,14 +175,14 @@ export function Root() {
 
           {!isHeaderCollapsed && (
             <p className="col-span-2 row-start-2 min-w-0 font-['JetBrains_Mono'] text-[18px] font-bold uppercase leading-[1.15] tracking-normal text-white lg:col-span-1 lg:col-start-1 lg:row-start-1">
-              <span className="lg:block lg:whitespace-nowrap">
+              <span className="md:block md:whitespace-nowrap">
                 A curated collection of{" "}
                 {visibleVideoCount === null
                   ? ""
                   : `${visibleVideoCount.toLocaleString()} `}
                 music videos
               </span>{" "}
-              <span className="lg:block lg:whitespace-nowrap">with top-tier craft and direction</span>
+              <span className="md:block md:whitespace-nowrap">with top-tier craft and direction</span>
             </p>
           )}
 

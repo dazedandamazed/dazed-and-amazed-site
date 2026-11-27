@@ -8,6 +8,7 @@ import {
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useVideoArchive } from "../hooks/useVideoArchive"
+import { splitArtistCredit, splitDirectorCredit } from "../creatorCredits"
 import { getYouTubeWatchUrl } from "../youtube"
 import { Footer } from "./Footer"
 
@@ -108,6 +109,10 @@ export function VideoDetail() {
   }, [videos, id])
 
   const video = videos[currentIndex]
+  const artistCredits = video ? splitArtistCredit(video.artist) : []
+  const directorCredits = video?.creators.director
+    ? splitDirectorCredit(video.creators.director)
+    : []
 
   // Reset error state when video changes
   useEffect(() => {
@@ -333,13 +338,27 @@ export function VideoDetail() {
               <h1 className="font-['JetBrains_Mono'] text-3xl font-extrabold uppercase leading-[1.05] tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
                 {video.title}
               </h1>
-              <button
-                onClick={() => handleTagClick(video.artist)}
-                className="mt-2.5 block cursor-pointer text-left font-['Kommuna_Demo'] text-[30px] font-normal leading-[1.1] text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] sm:mt-3.5 sm:text-[36px] lg:text-[42px]"
-                title={`Filter by ${video.artist}`}
-              >
-                {video.artist}
-              </button>
+              <div className="mt-2.5 flex flex-wrap items-baseline sm:mt-3.5">
+                {artistCredits.map(({ name, separatorBefore }, index) => (
+                  <span
+                    key={`${name}-${index}`}
+                    className="inline-flex items-baseline"
+                  >
+                    {separatorBefore && (
+                      <span className="whitespace-pre font-['Kommuna_Demo'] text-[30px] font-normal leading-[1.1] text-white sm:text-[36px] lg:text-[42px]">
+                        {separatorBefore}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleTagClick(name)}
+                      className="cursor-pointer text-left font-['Kommuna_Demo'] text-[30px] font-normal leading-[1.1] text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] sm:text-[36px] lg:text-[42px]"
+                      title={`Filter by ${name}`}
+                    >
+                      {name}
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
 
             {/* Description with Markdown link support */}
@@ -394,14 +413,15 @@ export function VideoDetail() {
               {/* Creators */}
               {video.creators && (
                 <div className="flex flex-wrap gap-2">
-                  {video.creators.director && (
+                  {directorCredits.map(({ name }, index) => (
                     <button
-                      onClick={() => handleTagClick(video.creators.director!)}
+                      key={`${name}-${index}`}
+                      onClick={() => handleTagClick(name)}
                       className="rounded-sm border border-white/20 bg-black px-3 py-1 font-['Helvetica_Neue'] text-sm leading-5 text-white transition-colors hover:border-[#D9E800] hover:bg-[#D9E800] hover:text-black active:border-[#D9E800] active:bg-[#D9E800] active:text-black"
                     >
-                      Dir: {video.creators.director}
+                      Dir: {name}
                     </button>
-                  )}
+                  ))}
                   {video.creators.productionCompany && (
                     <button
                       onClick={() =>

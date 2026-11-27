@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { getYouTubeVideoId, getYouTubeWatchUrl } from "../youtube";
 import { getVideoSourceThumbnail } from "../videoThumbnails";
+import { splitArtistCredit, splitDirectorCredit } from "../creatorCredits"
 
 interface VideoCardProps {
   video: Video;
@@ -67,6 +68,10 @@ export function VideoCard({ video, imageSizes, onTagClick }: VideoCardProps) {
   const thumbnailCandidates = getThumbnailCandidates(video);
   const primaryThumbnailUrl = thumbnailCandidates[thumbnailIndex];
   const youtubeWatchUrl = getYouTubeWatchUrl(video.videoUrl);
+  const artistCredits = splitArtistCredit(video.artist)
+  const directorCredits = video.creators.director
+    ? splitDirectorCredit(video.creators.director)
+    : []
 
   useEffect(() => {
     if (thumbnailIndex < thumbnailCandidates.length) return
@@ -230,13 +235,27 @@ export function VideoCard({ video, imageSizes, onTagClick }: VideoCardProps) {
               {video.title}
             </h3>
           </Link>
-          <button
-            onClick={() => onTagClick(video.artist, "creator")}
-            className="mt-1.5 block cursor-pointer text-left font-['Kommuna_Demo'] text-xl font-normal leading-tight text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] @md:mt-2 @sm:text-2xl @lg:text-[28px]"
-            title={`Filter by ${video.artist}`}
-          >
-            {video.artist}
-          </button>
+          <div className="mt-1.5 flex flex-wrap items-baseline @md:mt-2">
+            {artistCredits.map(({ name, separatorBefore }, index) => (
+              <span
+                key={`${name}-${index}`}
+                className="inline-flex items-baseline"
+              >
+                {separatorBefore && (
+                  <span className="whitespace-pre font-['Kommuna_Demo'] text-xl font-normal leading-tight text-white @sm:text-2xl @lg:text-[28px]">
+                    {separatorBefore}
+                  </span>
+                )}
+                <button
+                  onClick={() => onTagClick(name, "creator")}
+                  className="cursor-pointer text-left font-['Kommuna_Demo'] text-xl font-normal leading-tight text-white transition-colors hover:text-[#D9E800] active:text-[#D9E800] @sm:text-2xl @lg:text-[28px]"
+                  title={`Filter by ${name}`}
+                >
+                  {name}
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Tag Categories with consistent spacing scale */}
@@ -259,14 +278,15 @@ export function VideoCard({ video, imageSizes, onTagClick }: VideoCardProps) {
           {/* Creators */}
           {video.creators && (
             <div className={videoTagListClassName}>
-              {video.creators.director && (
+              {directorCredits.map(({ name }, index) => (
                 <button
-                  onClick={() => onTagClick(video.creators.director!, "creator")}
+                  key={`${name}-${index}`}
+                  onClick={() => onTagClick(name, "creator")}
                   className={videoTagClassName}
                 >
-                  Dir: {video.creators.director}
+                  Dir: {name}
                 </button>
-              )}
+              ))}
               {video.creators.productionCompany && (
                 <button
                   onClick={() =>

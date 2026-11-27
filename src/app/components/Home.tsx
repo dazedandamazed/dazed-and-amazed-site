@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { useSearchParams, Outlet } from "react-router"
 import type { Video } from "../models/video"
+import { splitArtistCredit, splitDirectorCredit } from "../creatorCredits"
 import { useVideoArchive } from "../hooks/useVideoArchive"
 import { VideoCard } from "./VideoCard"
 import { ArrowUp, Search, X } from "lucide-react"
@@ -211,8 +212,14 @@ export function Home() {
           const tagLower = tag.toLowerCase()
           return (
             video.artist.toLowerCase() === tagLower ||
+            splitArtistCredit(video.artist).some(
+              ({ name }) => name.toLowerCase() === tagLower,
+            ) ||
             video.techniques.some((t) => t.toLowerCase() === tagLower) ||
             video.creators.director?.toLowerCase() === tagLower ||
+            splitDirectorCredit(video.creators.director ?? "").some(
+              ({ name }) => name.toLowerCase() === tagLower,
+            ) ||
             video.creators.productionCompany?.toLowerCase() === tagLower ||
             video.creators.dop?.toLowerCase() === tagLower ||
             video.decade.toLowerCase() === tagLower
