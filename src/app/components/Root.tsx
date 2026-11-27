@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Logo } from "./Logo"
 import { LanguageToggle } from "./LanguageToggle"
 import { Footer } from "./Footer"
+import { useVideoArchive } from "../hooks/useVideoArchive"
 
 interface NavigationItem {
   to: string
@@ -19,14 +20,23 @@ const navigationItems: NavigationItem[] = [
 
 export function Root() {
   const location = useLocation()
+  const { videos, loading, error } = useVideoArchive()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [mobileMenuTop, setMobileMenuTop] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [displayedVideoCount, setDisplayedVideoCount] = useState<number | null>(
+    null,
+  )
   const headerRef = useRef<HTMLElement | null>(null)
+  const videoCount = videos.length
   const isHeaderCollapsed =
     isScrolled ||
     location.pathname.startsWith("/video/") ||
     location.pathname === "/random"
+  const visibleVideoCount =
+    loading || error
+      ? null
+      : displayedVideoCount ?? (videoCount > 0 ? 1 : 0)
 
   // Keep Browse highlighted on home "/" and inside any "/video/:id" overlay
   const isActive = (path: string) => {
@@ -40,6 +50,46 @@ export function Root() {
   useEffect(() => {
     setIsMobileMenuOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (loading || error) return
+
+    if (videoCount === 0) {
+      setDisplayedVideoCount(0)
+      return
+    }
+
+    const shouldAnimate =
+      window.matchMedia("(min-width: 1024px)").matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+    if (!shouldAnimate) {
+      setDisplayedVideoCount(videoCount)
+      return
+    }
+
+    const duration = 1500
+    let startTime: number | null = null
+    let animationFrame = 0
+
+    const animateCount = (timestamp: number) => {
+      startTime ??= timestamp
+      const progress = Math.min((timestamp - startTime) / duration, 1)
+      const easedProgress = 1 - Math.pow(1 - progress, 3)
+      setDisplayedVideoCount(
+        Math.min(videoCount, Math.max(1, Math.floor(easedProgress * videoCount))),
+      )
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animateCount)
+      }
+    }
+
+    setDisplayedVideoCount(1)
+    animationFrame = requestAnimationFrame(animateCount)
+
+    return () => cancelAnimationFrame(animationFrame)
+  }, [error, loading, videoCount])
 
   useEffect(() => {
     let scrolled = window.scrollY > 40
@@ -125,8 +175,14 @@ export function Root() {
 
           {!isHeaderCollapsed && (
             <p className="col-span-2 row-start-2 min-w-0 font-['JetBrains_Mono'] text-[18px] font-bold uppercase leading-[1.15] tracking-normal text-white lg:col-span-1 lg:col-start-1 lg:row-start-1">
-              <span className="block lg:whitespace-nowrap">A curated collection of music videos</span>
-              <span className="block lg:whitespace-nowrap">with top-tier craft and direction</span>
+              <span className="lg:block lg:whitespace-nowrap">
+                A curated collection of{" "}
+                {visibleVideoCount === null
+                  ? ""
+                  : `${visibleVideoCount.toLocaleString()} `}
+                music videos
+              </span>{" "}
+              <span className="lg:block lg:whitespace-nowrap">with top-tier craft and direction</span>
             </p>
           )}
 
