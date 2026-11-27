@@ -14,7 +14,6 @@ const navigationItems: NavigationItem[] = [
   { to: "/", label: "Browse" },
   { to: "/random", label: "Random" },
   // { to: "/thought", label: "Thoughts" },
-  { to: "/submit", label: "Contribute" },
   { to: "/about", label: "About" },
 ]
 
