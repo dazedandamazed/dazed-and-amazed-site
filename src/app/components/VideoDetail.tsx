@@ -9,6 +9,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useLanguage } from "../contexts/LanguageContext"
 import { useVideoArchive } from "../hooks/useVideoArchive"
 import { splitArtistCredit, splitDirectorCredit } from "../creatorCredits"
+import { getVideoPath } from "../videoSlug"
 import { getYouTubeWatchUrl } from "../youtube"
 import { Footer } from "./Footer"
 
@@ -105,7 +106,10 @@ export function VideoDetail() {
   }, [id])
 
   const currentIndex = useMemo(() => {
-    return videos.findIndex((v) => v.id === id)
+    const slugIndex = videos.findIndex((video) => video.slug === id)
+    return slugIndex >= 0
+      ? slugIndex
+      : videos.findIndex((video) => video.id === id)
   }, [videos, id])
 
   const video = videos[currentIndex]
@@ -155,11 +159,11 @@ export function VideoDetail() {
   }
 
   const goToPrev = () => {
-    if (prevVideo) navigate(`/video/${prevVideo.id}`, { replace: true })
+    if (prevVideo) navigate(getVideoPath(prevVideo), { replace: true })
   }
 
   const goToNext = () => {
-    if (nextVideo) navigate(`/video/${nextVideo.id}`, { replace: true })
+    if (nextVideo) navigate(getVideoPath(nextVideo), { replace: true })
   }
 
   // Lock background scroll while overlay is open
@@ -176,10 +180,10 @@ export function VideoDetail() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose()
       if (e.key === "ArrowLeft" && prevVideo) {
-        navigate(`/video/${prevVideo.id}`, { replace: true })
+        navigate(getVideoPath(prevVideo), { replace: true })
       }
       if (e.key === "ArrowRight" && nextVideo) {
-        navigate(`/video/${nextVideo.id}`, { replace: true })
+        navigate(getVideoPath(nextVideo), { replace: true })
       }
     }
     window.addEventListener("keydown", handleKeyDown)

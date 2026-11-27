@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { getYouTubeVideoId, getYouTubeWatchUrl } from "../youtube";
 import { getVideoSourceThumbnail } from "../videoThumbnails";
 import { splitArtistCredit, splitDirectorCredit } from "../creatorCredits"
+import { getVideoPath } from "../videoSlug"
 
 interface VideoCardProps {
   video: Video;
@@ -230,7 +231,7 @@ export function VideoCard({ video, imageSizes, onTagClick }: VideoCardProps) {
       <div className="space-y-3 @md:space-y-4">
         {/* Title & Artist with generous breathing room */}
         <div>
-          <Link to={`/video/${video.id}`}>
+          <Link to={getVideoPath(video)}>
             <h3 className="cursor-pointer font-['JetBrains_Mono'] text-lg font-extrabold uppercase leading-tight tracking-[-0.36px] transition-colors hover:text-[#D9E800] @sm:text-xl @md:text-[22px] @xl:text-2xl">
               {video.title}
             </h3>

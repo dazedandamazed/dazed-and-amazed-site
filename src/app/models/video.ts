@@ -11,6 +11,7 @@ export interface VideoStill {
 
 export interface Video {
   id: string
+  slug: string
   title: string
   artist: string
   videoUrl: string

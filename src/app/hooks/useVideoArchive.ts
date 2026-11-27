@@ -8,6 +8,7 @@ import {
 } from "react"
 import { projectId, publicAnonKey } from "../../../utils/supabase/info"
 import type { Video } from "../models/video"
+import { assignVideoSlugs } from "../videoSlug"
 import { getYouTubeVideoId } from "../youtube"
 
 function parseJson(value: unknown): unknown {
@@ -73,7 +74,9 @@ function fallbackId(row: Record<string, any>, url: string): string {
     .replace(/^-|-$/g, "")
 }
 
-function normalizeVideo(rawRow: Record<string, any>): Video | null {
+function normalizeVideo(
+  rawRow: Record<string, any>,
+): Omit<Video, "slug"> | null {
   // Helper: strips PostgreSQL array braces {} and quotes, cleanly joins director duos/trios
   function cleanText(val: unknown): string | undefined {
     if (!val) return undefined
@@ -187,9 +190,11 @@ export function VideoArchiveProvider({ children }: { children: ReactNode }) {
         const payload = await response.json()
         const normalized = (Array.isArray(payload) ? payload : payload.videos ?? [])
           .map(normalizeVideo)
-          .filter((video): video is Video => video !== null)
+          .filter(
+            (video): video is Omit<Video, "slug"> => video !== null,
+          )
 
-        setVideos(normalized)
+        setVideos(assignVideoSlugs(normalized))
         setLoading(false)
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === "AbortError") {

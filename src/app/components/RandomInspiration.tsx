@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useVideoArchive } from "../hooks/useVideoArchive";
+import { getVideoPath } from "../videoSlug"
 
 export function RandomInspiration() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export function RandomInspiration() {
       return;
     }
 
-    navigate(`/video/${randomVideo.id}`, { replace: true });
+    navigate(getVideoPath(randomVideo), { replace: true });
   }, [loading, navigate, videos]);
 
   return (
